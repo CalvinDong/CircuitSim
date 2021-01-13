@@ -1,9 +1,10 @@
 var canvas = new fabric.Canvas('c', { selection: false });
 //var canvas2 = new fabric.Canvas('d', { selection: false });
-var grid = 10;
-var qubit = 2;
 let width = window.innerWidth/2
 let height = window.innerHeight/1.5
+var grid = 10;
+var gridSize = width/grid
+var qubits = 2;
 console.log(`width is ${width}`)
 canvas.setWidth(width);
 canvas.setHeight(height);
@@ -16,12 +17,19 @@ var originalY = 0;
   canvas.add(new fabric.Line([ 0, i * grid, width, i * grid], { stroke: '#ccc', selectable: false })); // x-axis
 }*/
 
-for (var i = 0; i < (width / grid); i++) {
-  canvas.add(new fabric.Line([ (width/grid) * i , 0, (width/grid) * i, width], { stroke: '#ccc', selectable: false })); // y-axis
-  canvas.add(new fabric.Line([ 0, (width/grid) * i, width, (width/grid) * i], { stroke: '#ccc', selectable: false })); // x-axis
+for (var i = 0; i < (gridSize); i++) {
+  canvas.add(new fabric.Line([ gridSize * i , 0, gridSize * i, width], { stroke: '#ccc', selectable: false })); // y-axis
+  //canvas.add(new fabric.Line([ 0, (width/grid) * i, width, (width/grid) * i], { stroke: '#ccc', selectable: false })); // x-axis
 }
+
+for (var i = 0; i <= qubits; i++){
+  canvas.add(new fabric.Line([ 0, (width/5) + (gridSize * i), width,  (width/5) + (gridSize) * i], { stroke: '#ccc', selectable: false })); // x-axis
+  console.log((width/5) + (gridSize) * i)
+}
+
 //canvas.add(new fabric.Line([100,0,0,10], { stroke: '#ccc', selectable: false }));
 //canvas.add(new fabric.Line([0,width/5,height/3,width/5], { stroke: '#ccc', selectable: true }));
+console.log(width/5 + (gridSize * qubits))
 
 oingboing = {
 	left: 0, 
@@ -63,10 +71,10 @@ rekt.on('mousedown', function(){
 })
 
 rekt.on('moved', function() {
-  if (rekt.left < width){
+  if (rekt.left < width && (rekt.top > (width/5)) && (rekt.top < width/5 + (gridSize * qubits))){
     rekt.set({
-      left: Math.floor(rekt.left / (width/grid)) * width/grid,
-      top: Math.floor(rekt.top / (width/grid)) * width/grid
+      left: Math.floor(rekt.left / gridSize) * gridSize,
+      top: Math.floor(rekt.top / gridSize) * gridSize
     });
   }
   else{
