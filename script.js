@@ -18,7 +18,7 @@ var originalY = 0;
 }*/
 
 for (var i = 0; i < (gridSize); i++) {
-  canvas.add(new fabric.Line([ gridSize * i , 0, gridSize * i, width], { stroke: '#ccc', selectable: false })); // y-axis
+  canvas.add(new fabric.Line([ gridSize * i , (width/5), gridSize * i, width/5 + (gridSize*qubits)], { stroke: '#ccc', selectable: false })); // y-axis
   //canvas.add(new fabric.Line([ 0, (width/grid) * i, width, (width/grid) * i], { stroke: '#ccc', selectable: false })); // x-axis
 }
 
@@ -73,8 +73,8 @@ rekt.on('mousedown', function(){
 rekt.on('moved', function() {
   if (rekt.left < width && (rekt.top > (width/5)) && (rekt.top < width/5 + (gridSize * qubits))){
     rekt.set({
-      left: Math.floor(rekt.left / gridSize) * gridSize,
-      top: Math.floor(rekt.top / gridSize) * gridSize
+      left: Math.round(rekt.left / gridSize) * gridSize,
+      top: Math.round(rekt.top / gridSize) * gridSize
     });
   }
   else{
