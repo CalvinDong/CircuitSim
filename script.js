@@ -13,40 +13,13 @@ var originalY = 0;
 var hovering_no_drag = false;
 var moved = false;
 var temp;
-var circle1 = new fabric.Circle({
-  radius: 50,
-  fill: 'red',
-  left: 0
-});
-var circle2 = new fabric.Circle({
-  radius: 70,
-  fill: 'green',
-  left: 100
-});
-var circle3 = new fabric.Circle({
-  radius: 50,
-  fill: 'blue',
-  left: 200
-});
-
-var group = new fabric.Group([ ], {
-  left: 200,
-  top: 100
-});
-group.addWithUpdate(circle2.set({
-  left: group.get('left') + 300,
-  top: group.get('top'),
-  originX: 'center',
-  originY: 'center'
-}))
 
 var gridGroup = new fabric.Group([ ], {
   top: width/5,
   selectable: false
 });
 
-canvas.add(group);
-//var drag_rect;
+
 
 var test = [];
 // create grid
@@ -81,7 +54,6 @@ for (var i = 0; i <= qubits; i++){
   //canvas.add(new fabric.Line([ 0, (width/5) + (gridSize * i), width,  (width/5) + (gridSize) * i], { stroke: '#ccc', selectable: false })); // x-axis
   gridGroup.addWithUpdate(new fabric.Line([ 0, (width/5) + (gridSize * i), width,  (width/5) + (gridSize) * i], { stroke: '#ccc', selectable: false })); // x-axis
 }
-canvas.add(group);
 canvas.add(gridGroup);
 canvas.renderAll()
 //canvas.add(new fabric.Line([100,0,0,10], { stroke: '#ccc', selectable: false }));
@@ -92,8 +64,8 @@ console.log(width/5)
 drag = {
 	left: 0, 
   top: 0, 
-  width: gridSize, 
-  height: gridSize, 
+  width: gridSize * 0.7, 
+  height: gridSize * 0.7, 
   fill: '#faa', 
   originX: 'left', 
   originY: 'top',
@@ -106,8 +78,8 @@ drag = {
 no_drag = {
 	left: 0, 
   top: 0, 
-  width: gridSize, 
-  height: gridSize, 
+  width: gridSize * 0.7, 
+  height: gridSize * 0.7, 
   fill: '#faa', 
   originX: 'left', 
   originY: 'top',
@@ -117,6 +89,27 @@ no_drag = {
   selectable: false,
   hasControls: false
 }
+
+//   _         _______    _______    _    _______     
+//  | |       |  _____|  |__   __|  |_|  | ______|     
+//  | |       | |_____      | |      /   | |_____      
+//  | |       |  _____|     | |          |_____  |     
+//  | |_____  | |_____      | |           _____| |      
+//  |_______| |_______|     |_|          |_______|     
+
+//   _______   _         _______          _        __    _
+//  |  _____| | |       |  _____|       / _ \     |  \  | |
+//  | |       | |       | |_____       / /_\ \    | |\\ | |
+//  | |       | |       |  _____|     / _____ \   | | \\| |
+//  | |_____  | |_____  | |_____     / /     \ \  | |  \  |
+//  |_______| |_______| |_______|   /_/       \_\ |_|   \_|       
+
+//   _    _    _______
+//  | |  | |  |  ___  |
+//  | |  | |  | |___| |
+//  | |  | |  |  _____|
+//  | |__| |  | |
+//  |______|  |_|                 the code now
 
 // add objects
 
@@ -155,8 +148,8 @@ canvas.on('object:moved', function(options){
     if (options.target.left < width && (options.target.top > (width/5)) && (options.target.top < width/5 + (gridSize * qubits))){
       console.log("placing")
       options.target.set({
-        left: Math.round(options.target.left / gridSize) * gridSize,
-        top: Math.round(options.target.top / gridSize) * gridSize,
+        left: Math.round(options.target.left / gridSize) * gridSize + (gridSize * 0.3)/2,
+        top: Math.round(options.target.top / gridSize) * gridSize + (gridSize * 0.3)/2,
         hasControls: true
       });
       CalculateIntersection(options)
