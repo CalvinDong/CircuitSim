@@ -13,6 +13,39 @@ var originalY = 0;
 var hovering_no_drag = false;
 var moved = false;
 var temp;
+var circle1 = new fabric.Circle({
+  radius: 50,
+  fill: 'red',
+  left: 0
+});
+var circle2 = new fabric.Circle({
+  radius: 70,
+  fill: 'green',
+  left: 100
+});
+var circle3 = new fabric.Circle({
+  radius: 50,
+  fill: 'blue',
+  left: 200
+});
+
+var group = new fabric.Group([ ], {
+  left: 200,
+  top: 100
+});
+group.addWithUpdate(circle2.set({
+  left: group.get('left') + 300,
+  top: group.get('top'),
+  originX: 'center',
+  originY: 'center'
+}))
+
+var gridGroup = new fabric.Group([ ], {
+  top: width/5,
+  selectable: false
+});
+
+canvas.add(group);
 //var drag_rect;
 
 var test = [];
@@ -39,15 +72,18 @@ var test = [];
 }*/
 
 for (var i = 0; i < (gridSize); i++) {
-  canvas.add(new fabric.Line([ gridSize * i , (width/5), gridSize * i, width/5 + (gridSize*qubits)], { stroke: '#ccc', selectable: false })); // y-axis
-  //canvas.add(new fabric.Line([ 0, (width/grid) * i, width, (width/grid) * i], { stroke: '#ccc', selectable: false })); // x-axis
+  //canvas.add(new fabric.Line([ gridSize * i , (width/5), gridSize * i, width/5 + (gridSize*qubits)], { stroke: '#ccc', selectable: false })); // y-axis
+  //canvas.add(new fabric.Line([ gridSize * i , (width/5), gridSize * i, width/5 + (gridSize*qubits)], { stroke: '#ccc', selectable: false })); // y-axis
+  gridGroup.addWithUpdate(new fabric.Line([ gridSize * i , (width/5), gridSize * i, width/5 + (gridSize*qubits)], { stroke: '#ccc', selectable: false })); // y-axis
 }
 
 for (var i = 0; i <= qubits; i++){
-  canvas.add(new fabric.Line([ 0, (width/5) + (gridSize * i), width,  (width/5) + (gridSize) * i], { stroke: '#ccc', selectable: false })); // x-axis
-  //console.log((width/5) + (gridSize) * i)
+  //canvas.add(new fabric.Line([ 0, (width/5) + (gridSize * i), width,  (width/5) + (gridSize) * i], { stroke: '#ccc', selectable: false })); // x-axis
+  gridGroup.addWithUpdate(new fabric.Line([ 0, (width/5) + (gridSize * i), width,  (width/5) + (gridSize) * i], { stroke: '#ccc', selectable: false })); // x-axis
 }
-
+canvas.add(group);
+canvas.add(gridGroup);
+canvas.renderAll()
 //canvas.add(new fabric.Line([100,0,0,10], { stroke: '#ccc', selectable: false }));
 //canvas.add(new fabric.Line([0,width/5,height/3,width/5], { stroke: '#ccc', selectable: true }));
 console.log(width/5 + (gridSize * qubits))
@@ -97,58 +133,19 @@ no_drag_rect.on('mouseover', function(){
     canvas.add(new fabric.Rect(drag));
     canvas.renderAll();
   }*/
-  //canvas.add(new fabric.Rect(drag));
-  testOriginX = new fabric.Point(0,gridSize)
-  testOriginY = new fabric.Point(gridSize,gridSize)
-  console.log(no_drag_rect.intersectsWithRect(testOriginX, testOriginY));
+  canvas.add(new fabric.Rect(drag));
   console.log("mouse is over")
 })
 
 //try using pointers before doing inividual mouseover and mouseout functions
 
-/*no_drag_rect.on('mouseout', function(){
-  if (hovering_no_drag == true && moved == true){
-    hovering_no_drag == false;
-    canvas.remove(drag_rect);
-  }
-  console.log("mouse is out")
-  //canvas.renderAll();
-})
-
-// snap to grid
-drag_rect.on('mousedown', function(){
-  originalX = drag_rect.left;
-  originalY = drag_rect.top;
-  console.log(`x is ${originalX} and y is ${originalY}`)
-})
-
-drag_rect.on('moved', function() {
-  if (drag_rect.left < width && (drag_rect.top > (width/5)) && (drag_rect.top < width/5 + (gridSize * qubits))){
-    drag_rect.set({
-      left: Math.round(drag_rect.left / gridSize) * gridSize,
-      top: Math.round(drag_rect.top / gridSize) * gridSize,
-      hasControls: true
-    });
-  }
-  else{
-    drag_rect.set({
-      left: originalX,
-      top: originalY,
-      hasControls: true
-    });
-  }
-  canvas.renderAll();
-  drag_rect.set('hasControls', false) // Reveal and unreveal control to keep interactivity bug free please
-  console.log('selected a rectangle');
-  drag_rect.set('fill', 'green');
-  canvas.renderAll();
-});*/
-
 canvas.on('mouse:down', function(options){
-  if (options.target.type == 'rect') {
-    originalX = options.target.left;
-    originalY = options.target.top;
-    console.log(`x is ${originalX} and y is ${originalY}`)
+  if (options.type != null){
+    if (options.target.type == 'rect') {
+      originalX = options.target.left;
+      originalY = options.target.top;
+      console.log(`x is ${originalX} and y is ${originalY}`)
+    }
   }
 })
 
@@ -162,29 +159,44 @@ canvas.on('object:moved', function(options){
         top: Math.round(options.target.top / gridSize) * gridSize,
         hasControls: true
       });
+      CalculateIntersection(options)
     }
     else if (options.target.top < (width/5)) {
       console.log("removing")
       canvas.fxRemove(options.target);
     }
     else{
-      console.log("back to where you belong")
-      options.target.set({
-        left: originalX,
-        top: originalY,
-        hasControls: true
-      });
+      SnapToPreviousPosition(options);
     }
     canvas.renderAll();
     options.target.set('hasControls', false) // Reveal and unreveal control to keep interactivity bug free please
     options.target.set('fill', 'green');
     console.log('selected a rectangle');
+    //CalculateIntersection(options);
     canvas.renderAll();
   }
   //console.log(canvas.getObjects())
 })
 
-function CalculateIntersection(){
+function SnapToPreviousPosition(options){
+  console.log("back to where you belong")
+  options.target.set({
+    left: originalX,
+    top: originalY,
+    hasControls: true
+  });
+}
 
+function CalculateIntersection(options){
+  options.target.setCoords();
+  canvas.forEachObject(function(obj) {
+    //console.log(obj)
+    if (obj === options.target) return;
+    if (options.target.intersectsWithObject(obj) && obj != gridGroup) {
+      snapped = true
+      SnapToPreviousPosition(options)
+    }
+    //SnapToPreviousPosition(options);
+  });
 }
 
