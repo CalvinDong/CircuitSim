@@ -1,71 +1,25 @@
 var canvas = new fabric.Canvas('c', { selection: false });
-//var canvas2 = new fabric.Canvas('d', { selection: false });
-let width = window.innerWidth/2
-let height = window.innerHeight/1.5
-var grid = 10;
-var gridSize = width/grid
-var qubits = 2;
-console.log(`width is ${width}`)
+const width = window.innerWidth/2;
+const height = window.innerHeight/1.5;
 canvas.setWidth(width);
 canvas.setHeight(height);
-var originalX = 0;
-var originalY = 0;
-var hovering_no_drag = false;
-var moved = false;
-var temp;
-
-var gridGroup = new fabric.Group([ ], {
-  top: width/5,
+const grid = 10;
+const gridSize = width/grid;
+const tileSize = gridSize * 0.7;
+const toolboxOffset = width/5;
+let qubits = 2;
+let originalX = 0;
+let originalY = 0;
+let gridGroup = new fabric.Group([ ], {
+  top: toolboxOffset,
   selectable: false
 });
-
-
-
-var test = [];
-// create grid
-
-/*for (var n = 0; n < 11; n++){
-  var testCirc = new fabric.Circle({ 
-    left: Math.floor(Math.random() * 500) , 
-    top: Math.floor(Math.random() * 500) , 
-    radius: 50, 
-    fill: '#9f9', 
-    originX: 'left', 
-    originY: 'top',
-    centeredRotation: true
-  })
-  test.push(testCirc);
-  canvas.add(test[n]);
-}*/
-
-
-/*for (var i = 0; i < (width / grid); i++) {
-  canvas.add(new fabric.Line([ i * grid, 0, i * grid, width], { stroke: '#ccc', selectable: false })); // y-axis
-  canvas.add(new fabric.Line([ 0, i * grid, width, i * grid], { stroke: '#ccc', selectable: false })); // x-axis
-}*/
-
-for (var i = 0; i < (gridSize); i++) {
-  //canvas.add(new fabric.Line([ gridSize * i , (width/5), gridSize * i, width/5 + (gridSize*qubits)], { stroke: '#ccc', selectable: false })); // y-axis
-  //canvas.add(new fabric.Line([ gridSize * i , (width/5), gridSize * i, width/5 + (gridSize*qubits)], { stroke: '#ccc', selectable: false })); // y-axis
-  gridGroup.addWithUpdate(new fabric.Line([ gridSize * i , (width/5), gridSize * i, width/5 + (gridSize*qubits)], { stroke: '#ccc', selectable: false })); // y-axis
-}
-
-for (var i = 0; i <= qubits; i++){
-  //canvas.add(new fabric.Line([ 0, (width/5) + (gridSize * i), width,  (width/5) + (gridSize) * i], { stroke: '#ccc', selectable: false })); // x-axis
-  gridGroup.addWithUpdate(new fabric.Line([ 0, (width/5) + (gridSize * i), width,  (width/5) + (gridSize) * i], { stroke: '#ccc', selectable: false })); // x-axis
-}
-canvas.add(gridGroup);
-canvas.renderAll()
-//canvas.add(new fabric.Line([100,0,0,10], { stroke: '#ccc', selectable: false }));
-//canvas.add(new fabric.Line([0,width/5,height/3,width/5], { stroke: '#ccc', selectable: true }));
-console.log(width/5 + (gridSize * qubits))
-console.log(width/5)
 
 drag = {
 	left: 0, 
   top: 0, 
-  width: gridSize * 0.7, 
-  height: gridSize * 0.7, 
+  width: tileSize, 
+  height: tileSize, 
   fill: '#faa', 
   originX: 'left', 
   originY: 'top',
@@ -78,8 +32,8 @@ drag = {
 no_drag = {
 	left: 0, 
   top: 0, 
-  width: gridSize * 0.7, 
-  height: gridSize * 0.7, 
+  width: tileSize, 
+  height: tileSize, 
   fill: '#faa', 
   originX: 'left', 
   originY: 'top',
@@ -89,6 +43,8 @@ no_drag = {
   selectable: false,
   hasControls: false
 }
+
+var no_drag_rect = new fabric.Rect(no_drag);
 
 //   _         _______    _______    _    _______     
 //  | |       |  _____|  |__   __|  |_|  | ______|     
@@ -113,48 +69,41 @@ no_drag = {
 
 // add objects
 
-var no_drag_rect = new fabric.Rect(no_drag);
-//var drag_rect = new fabric.Rect(drag);
-
+DrawGrid();
 canvas.add(no_drag_rect);
-//canvas.add(new fabric.Triangle());
 
 no_drag_rect.on('mouseover', function(){
-  /*if (hovering_no_drag == false){
-    hovering_no_drag = true;
-    //drag_rect = new fabric.Rect(drag);
-    canvas.add(new fabric.Rect(drag));
-    canvas.renderAll();
-  }*/
   canvas.add(new fabric.Rect(drag));
   console.log("mouse is over")
 })
 
-//try using pointers before doing inividual mouseover and mouseout functions
-
-canvas.on('mouse:down', function(options){
-  if (options.type != null){
+canvas.on('mouse:down', function(options){ // Keep track of original tile position
+  console.log("mouse is down")
+  try{
     if (options.target.type == 'rect') {
       originalX = options.target.left;
       originalY = options.target.top;
       console.log(`x is ${originalX} and y is ${originalY}`)
     }
   }
+  catch(err){
+    
+  }
 })
 
 canvas.on('object:moved', function(options){
   if (options.target.type == 'rect') {
     console.log(options.target.top)
-    if (options.target.left < width && (options.target.top > (width/5)) && (options.target.top < width/5 + (gridSize * qubits))){
+    if (options.target.left < width && (options.target.top > toolboxOffset) && (options.target.top < toolboxOffset + (gridSize * qubits))){
       console.log("placing")
-      options.target.set({
-        left: Math.round(options.target.left / gridSize) * gridSize + (gridSize * 0.3)/2,
-        top: Math.round(options.target.top / gridSize) * gridSize + (gridSize * 0.3)/2,
+      options.target.set({ // Placing in the center of the grid tiles
+        left: Math.round(options.target.left / gridSize) * gridSize + (gridSize * (1 - (tileSize/gridSize)))/2,
+        top: Math.round(options.target.top / gridSize) * gridSize + (gridSize * (1 - (tileSize/gridSize)))/2,
         hasControls: true
       });
       CalculateIntersection(options)
     }
-    else if (options.target.top < (width/5)) {
+    else if (options.target.top < toolboxOffset) {
       console.log("removing")
       canvas.fxRemove(options.target);
     }
@@ -162,16 +111,15 @@ canvas.on('object:moved', function(options){
       SnapToPreviousPosition(options);
     }
     canvas.renderAll();
-    options.target.set('hasControls', false) // Reveal and unreveal control to keep interactivity bug free please
+    options.target.set('hasControls', false) // Reveal and unreveal hasControls to keep interactivity bug free please
     options.target.set('fill', 'green');
     console.log('selected a rectangle');
-    //CalculateIntersection(options);
     canvas.renderAll();
   }
   //console.log(canvas.getObjects())
 })
 
-function SnapToPreviousPosition(options){
+function SnapToPreviousPosition(options){ // If tile is not placed in a permitted area, then put it back to where it came from
   console.log("back to where you belong")
   options.target.set({
     left: originalX,
@@ -180,7 +128,7 @@ function SnapToPreviousPosition(options){
   });
 }
 
-function CalculateIntersection(options){
+function CalculateIntersection(options){ // Determine if tile is being moved into grid with already exiting tile
   options.target.setCoords();
   canvas.forEachObject(function(obj) {
     //console.log(obj)
@@ -191,5 +139,24 @@ function CalculateIntersection(options){
     }
     //SnapToPreviousPosition(options);
   });
+}
+
+function DrawGrid(){ // Draw lines
+  for (var i = 0; i < (gridSize); i++) {
+    gridGroup.addWithUpdate(new fabric.Line(
+      [ gridSize * i , toolboxOffset, gridSize * i, toolboxOffset + (gridSize*qubits)], 
+      { stroke: '#ccc', selectable: false }
+      )); // y-axis
+  }
+  
+  for (var i = 0; i <= qubits; i++){
+    gridGroup.addWithUpdate(new fabric.Line(
+        [ 0, (toolboxOffset) + (gridSize * i), width,  toolboxOffset + (gridSize) * i], 
+        { stroke: '#ccc', selectable: false }
+      )); // x-axis
+  }
+
+  canvas.add(gridGroup);
+  canvas.renderAll()
 }
 
