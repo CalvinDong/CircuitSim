@@ -74,9 +74,13 @@ var no_drag_rect = new fabric.Rect(no_drag);
 DrawGrid();
 canvas.add(no_drag_rect);
 
-no_drag_rect.on('mouseover', function(){
+no_drag_rect.on('mouseover', function(){ // Spawn new tile when mouse is over a tile in the toolbox
   canvas.add(new fabric.Rect(drag));
   console.log("mouse is over")
+})
+
+gridGroup.on('mousedown', function(){ // Make sure grid is always at the back
+  canvas.sendToBack(gridGroup);
 })
 
 canvas.on('mouse:down', function(options){ // Keep track of original tile position
@@ -162,7 +166,7 @@ function DrawGrid(){ // Draw lines
   canvas.renderAll()
 }
 
-function AddQubit(){
+function AddQubit(){ // Remove all grid lines then redraw them with an extra row
   if (qubits < maxQubits){
     console.log("add");
     qubits++;
@@ -175,7 +179,7 @@ function AddQubit(){
   }
 }
 
-function SubtractQubit(){
+function SubtractQubit(){ // // Remove all grid lines then redraw them with one less row
   if (qubits > minQubits){
     console.log("subtract");
     qubits--;
