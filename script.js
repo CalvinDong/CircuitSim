@@ -3,6 +3,8 @@ const width = window.innerWidth/2;
 const height = window.innerHeight/1.5;
 canvas.setWidth(width);
 canvas.setHeight(height);
+const maxQubits = 8;
+const minQubits = 2;
 const grid = 10;
 const gridSize = width/grid;
 const tileSize = gridSize * 0.7;
@@ -87,7 +89,7 @@ canvas.on('mouse:down', function(options){ // Keep track of original tile positi
     }
   }
   catch(err){
-    
+    // avoid error option type null error popping up in console
   }
 })
 
@@ -142,6 +144,13 @@ function CalculateIntersection(options){ // Determine if tile is being moved int
 }
 
 function DrawGrid(){ // Draw lines
+  for (var i = 0; i <= qubits; i++){
+    gridGroup.addWithUpdate(new fabric.Line(
+        [ 0, (toolboxOffset) + (gridSize * i), width,  toolboxOffset + (gridSize) * i], 
+        { stroke: '#ccc', selectable: false }
+      )); // x-axis
+  }
+  
   for (var i = 0; i < (gridSize); i++) {
     gridGroup.addWithUpdate(new fabric.Line(
       [ gridSize * i , toolboxOffset, gridSize * i, toolboxOffset + (gridSize*qubits)], 
@@ -149,14 +158,33 @@ function DrawGrid(){ // Draw lines
       )); // y-axis
   }
   
-  for (var i = 0; i <= qubits; i++){
-    gridGroup.addWithUpdate(new fabric.Line(
-        [ 0, (toolboxOffset) + (gridSize * i), width,  toolboxOffset + (gridSize) * i], 
-        { stroke: '#ccc', selectable: false }
-      )); // x-axis
-  }
-
   canvas.add(gridGroup);
   canvas.renderAll()
+}
+
+function AddQubit(){
+  if (qubits < maxQubits){
+    console.log("add");
+    qubits++;
+    gridGroup.forEachObject(function(obj){
+      gridGroup.remove(obj)
+    })
+    canvas.remove(gridGroup)
+    DrawGrid();
+    console.log(qubits)
+  }
+}
+
+function SubtractQubit(){
+  if (qubits > minQubits){
+    console.log("subtract");
+    qubits--;
+    gridGroup.forEachObject(function(obj){
+      gridGroup.remove(obj)
+    })
+    canvas.remove(gridGroup)
+    DrawGrid();
+    console.log(qubits)
+  }
 }
 
