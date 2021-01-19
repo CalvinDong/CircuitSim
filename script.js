@@ -5,7 +5,7 @@ canvas.setWidth(width);
 canvas.setHeight(height);
 const maxQubits = 8;
 const minQubits = 2;
-const grid = 10;
+const grid = 25;
 const gridSize = width/grid;
 const tileSize = gridSize * 0.7;
 const toolboxOffset = width/5;
@@ -157,7 +157,7 @@ function DrawGrid(){ // Draw lines
   
   for (var i = 0; i < (gridSize); i++) {
     gridGroup.addWithUpdate(new fabric.Line(
-      [ gridSize * i , toolboxOffset, gridSize * i, toolboxOffset + (gridSize*qubits)], 
+      [ gridSize * i , toolboxOffset, gridSize * i, toolboxOffset + (gridSize * qubits)], 
       { stroke: '#ccc', selectable: false }
       )); // y-axis
   }
@@ -171,11 +171,11 @@ function AddQubit(){ // Remove all grid lines then redraw them with an extra row
     console.log("add");
     qubits++;
     gridGroup.forEachObject(function(obj){
-      gridGroup.remove(obj)
+      gridGroup.remove(obj);
     })
-    canvas.remove(gridGroup)
+    canvas.remove(gridGroup);
     DrawGrid();
-    console.log(qubits)
+    console.log(qubits);
   }
 }
 
@@ -184,11 +184,27 @@ function SubtractQubit(){ // // Remove all grid lines then redraw them with one 
     console.log("subtract");
     qubits--;
     gridGroup.forEachObject(function(obj){
-      gridGroup.remove(obj)
+      gridGroup.remove(obj);
     })
-    canvas.remove(gridGroup)
+    canvas.remove(gridGroup);
     DrawGrid();
-    console.log(qubits)
+    console.log(qubits);
   }
+  var SVG = canvas.toSVG(); 
+  console.log(SVG);
+}
+
+function SaveToSVG(){
+  console.log("Save to SVG")
+  let file;
+  let content = canvas.toSVG(); 
+  try{
+    file = new File([content], "circuit.svg", {type: 'text/plain'});
+  }
+  catch(e){
+    file = new Blob([content], {type: 'text/plain'});
+  }
+  var objectURL = URL.createObjectURL(file);
+  document.getElementById('link').href = objectURL;
 }
 
