@@ -9,6 +9,13 @@ const grid = 25;
 const gridSize = width/grid;
 const tileSize = gridSize * 0.7;
 const toolboxOffset = width/5;
+const tools = [
+  {name: 'H', color: '#7400B8'},
+  {name: 'I', color: '#6930C3'},
+  {name: 'T', color: '#5E60CE'},
+  {name: 'S', color: '#5390D9'},
+  {name: 'Z', color: '#4EA8DE'}
+]
 let qubits = 2;
 let originalX = 0;
 let originalY = 0;
@@ -75,6 +82,38 @@ let textField = {
   hasControls: false
 }
 
+DrawGrid();
+
+tools.forEach(function(element){ // Build the toolbox
+  canvas.add(new fabric.Group(
+    [new fabric.Rect({
+      left: 0, 
+      top: 0, 
+      width: tileSize, 
+      height: tileSize, 
+      fill: element.color, 
+      originX: 'left', 
+      originY: 'top',
+      selectable: true,
+      centeredRotation: true,
+      hasBorders: false,
+      selectable: false,
+      hasControls: false
+    }), new fabric.Text(element.name, textField)
+  ], 
+    {
+      left: originalX, 
+      top: 0,
+      selectable: true,
+      hasBorders: false,
+      selectable: false,
+      hasControls: false
+    }
+  ))
+  originalX = originalX + tileSize + tileSize/2;
+})
+
+/*
 var no_drag_rect_H = new fabric.Group(
   [new fabric.Rect(no_drag_H), new fabric.Text('H', textField)], 
   {left: 0, top: 0}
@@ -84,6 +123,7 @@ var no_drag_rect_I = new fabric.Group(
   [new fabric.Rect(no_drag_I), new fabric.Text('I', textField)], 
   {left: 0 + tileSize + tileSize/2, top: 0}
 );
+*/
 
 //Create array to add in tiles automatically?
 
@@ -109,11 +149,7 @@ var no_drag_rect_I = new fabric.Group(
 //  |______|  |_|                 the code now
 
 // add objects
-
-DrawGrid();
-canvas.add(no_drag_rect_H);
-canvas.add(no_drag_rect_I);
-
+/*
 no_drag_rect_H.on('mouseover', function(){ // Spawn new tile when mouse is over a tile in the toolbox
   canvas.add(new fabric.Group(
     [new fabric.Rect(drag), new fabric.Text('H', textField)], 
@@ -125,9 +161,13 @@ no_drag_rect_H.on('mouseover', function(){ // Spawn new tile when mouse is over 
     }
   ));
 })
-
+*/
 gridGroup.on('mousedown', function(){ // Make sure grid is always at the back
   canvas.sendToBack(gridGroup);
+})
+
+canvas.on('mouse:over', function(options){
+  console.log('over');
 })
 
 canvas.on('mouse:down', function(options){ // Keep track of original tile position
@@ -152,7 +192,7 @@ canvas.on('object:moved', function(options){
         top: Math.round(options.target.top / gridSize) * gridSize + (gridSize * (1 - (tileSize/gridSize)))/2,
         hasControls: true
       });
-      CalculateIntersection(options)
+      CalculateIntersection(options);
     }
     else if (options.target.top < toolboxOffset) {
       console.log("removing")
@@ -167,7 +207,7 @@ canvas.on('object:moved', function(options){
     canvas.renderAll();
   }
   //console.log(canvas.getObjects())
-})
+});
 
 function SnapToPreviousPosition(options){ // If tile is not placed in a permitted area, then put it back to where it came from
   console.log("back to where you belong")
