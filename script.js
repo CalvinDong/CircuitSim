@@ -1,4 +1,4 @@
-var canvas = new fabric.Canvas('c', { selection: false });
+const canvas = new fabric.Canvas('c', { selection: false });
 const width = window.innerWidth/2;
 const height = window.innerHeight/1.5;
 canvas.setWidth(width);
@@ -14,8 +14,15 @@ const tools = [
   {name: 'I', color: '#6930C3'},
   {name: 'T', color: '#5E60CE'},
   {name: 'S', color: '#5390D9'},
-  {name: 'Z', color: '#4EA8DE'}
+  {name: 'Z', color: '#4EA8DE'},
+  {name: '?', color: '#48BFE3'},
+  {name: '.', color: '#56CFE1'},
+  {name: '<', color: '#64DFDF'},
+  {name: '>', color: '#72EFDD'},
+  {name: '{}', color: '#80FFDB'}
+
 ]
+
 let qubits = 2;
 let originalX = 0;
 let originalY = 0;
@@ -112,7 +119,7 @@ gridGroup.on('mousedown', function(){ // Make sure grid is always at the back
   canvas.sendToBack(gridGroup);
 })
 
-canvas.on('mouse:over', function(options){
+canvas.on('mouse:over', function(options){ // Spawn new draggable instance of gate when hovering over said gate tile in toolbox
   try{
     if (options.target != gridGroup && !options.target._objects[0].selectable){
       canvas.add(new fabric.Group(
@@ -171,7 +178,7 @@ canvas.on('object:moved', function(options){
     }
     else if (options.target.top < toolboxOffset) {
       console.log("removing")
-      canvas.fxRemove(options.target);
+      canvas.remove(options.target);
     }
     else{
       SnapToPreviousPosition(options);
@@ -196,13 +203,11 @@ function SnapToPreviousPosition(options){ // If tile is not placed in a permitte
 function CalculateIntersection(options){ // Determine if tile is being moved into grid with already exiting tile
   options.target.setCoords();
   canvas.forEachObject(function(obj) {
-    //console.log(obj)
     if (obj === options.target) return;
     if (options.target.intersectsWithObject(obj) && obj != gridGroup) {
       snapped = true
       SnapToPreviousPosition(options)
     }
-    //SnapToPreviousPosition(options);
   });
 }
 
