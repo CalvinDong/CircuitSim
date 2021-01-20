@@ -14,15 +14,16 @@ let originalX = 0;
 let originalY = 0;
 let gridGroup = new fabric.Group([ ], {
   top: toolboxOffset,
+  hoverCursor: 'default',
   selectable: false
 });
 
-drag = {
+let drag = {
 	left: 0, 
   top: 0, 
   width: tileSize, 
   height: tileSize, 
-  fill: '#faa', 
+  fill: '#7400B8', 
   originX: 'left', 
   originY: 'top',
   selectable: true,
@@ -31,12 +32,12 @@ drag = {
   hasControls: false
 }
 
-no_drag = {
+let no_drag_H = {
 	left: 0, 
   top: 0, 
   width: tileSize, 
   height: tileSize, 
-  fill: '#faa', 
+  fill: '#7400B8', 
   originX: 'left', 
   originY: 'top',
   selectable: true,
@@ -46,7 +47,45 @@ no_drag = {
   hasControls: false
 }
 
-var no_drag_rect = new fabric.Rect(no_drag);
+let no_drag_I = {
+	left: 0, 
+  top: 0, 
+  width: tileSize, 
+  height: tileSize, 
+  fill: '#80FFDB', 
+  originX: 'left', 
+  originY: 'top',
+  selectable: true,
+  centeredRotation: true,
+  hasBorders: false,
+  selectable: false,
+  hasControls: false
+}
+
+let textField = {
+  left: tileSize/2,
+  top: tileSize/2,
+  fontSize: tileSize/2, 
+  originX: 'center', 
+  originY: 'center', 
+  fill: 'white',
+  fontFamily: 'helvetica',
+  hasBorders: false, 
+  selectable: false, 
+  hasControls: false
+}
+
+var no_drag_rect_H = new fabric.Group(
+  [new fabric.Rect(no_drag_H), new fabric.Text('H', textField)], 
+  {left: 0, top: 0}
+)
+
+var no_drag_rect_I = new fabric.Group(
+  [new fabric.Rect(no_drag_I), new fabric.Text('I', textField)], 
+  {left: 0 + tileSize + tileSize/2, top: 0}
+);
+
+//Create array to add in tiles automatically?
 
 //   _         _______    _______    _    _______     
 //  | |       |  _____|  |__   __|  |_|  | ______|     
@@ -72,11 +111,19 @@ var no_drag_rect = new fabric.Rect(no_drag);
 // add objects
 
 DrawGrid();
-canvas.add(no_drag_rect);
+canvas.add(no_drag_rect_H);
+canvas.add(no_drag_rect_I);
 
-no_drag_rect.on('mouseover', function(){ // Spawn new tile when mouse is over a tile in the toolbox
-  canvas.add(new fabric.Rect(drag));
-  console.log("mouse is over")
+no_drag_rect_H.on('mouseover', function(){ // Spawn new tile when mouse is over a tile in the toolbox
+  canvas.add(new fabric.Group(
+    [new fabric.Rect(drag), new fabric.Text('H', textField)], 
+    { left: no_drag_rect_H.left, 
+      top: no_drag_rect_H.top, 
+      hasControls: false,
+      hoverCursor: 'grab',
+      moveCursor: 'grabbing',
+    }
+  ));
 })
 
 gridGroup.on('mousedown', function(){ // Make sure grid is always at the back
@@ -84,12 +131,10 @@ gridGroup.on('mousedown', function(){ // Make sure grid is always at the back
 })
 
 canvas.on('mouse:down', function(options){ // Keep track of original tile position
-  console.log("mouse is down")
   try{
-    if (options.target.type == 'rect') {
+    if (options.target.type == 'group' && options.target.type != gridGroup) {
       originalX = options.target.left;
       originalY = options.target.top;
-      console.log(`x is ${originalX} and y is ${originalY}`)
     }
   }
   catch(err){
@@ -98,7 +143,7 @@ canvas.on('mouse:down', function(options){ // Keep track of original tile positi
 })
 
 canvas.on('object:moved', function(options){
-  if (options.target.type == 'rect') {
+  if (options.target.type == 'group' && options.target.type != gridGroup) {
     console.log(options.target.top)
     if (options.target.left < width && (options.target.top > toolboxOffset) && (options.target.top < toolboxOffset + (gridSize * qubits))){
       console.log("placing")
@@ -118,8 +163,7 @@ canvas.on('object:moved', function(options){
     }
     canvas.renderAll();
     options.target.set('hasControls', false) // Reveal and unreveal hasControls to keep interactivity bug free please
-    options.target.set('fill', 'green');
-    console.log('selected a rectangle');
+    //options.target.set('fill', 'green');
     canvas.renderAll();
   }
   //console.log(canvas.getObjects())
@@ -175,11 +219,10 @@ function AddQubit(){ // Remove all grid lines then redraw them with an extra row
     })
     canvas.remove(gridGroup);
     DrawGrid();
-    console.log(qubits);
   }
 }
 
-function SubtractQubit(){ // // Remove all grid lines then redraw them with one less row
+function SubtractQubit(){ // Remove all grid lines then redraw them with one less row
   if (qubits > minQubits){
     console.log("subtract");
     qubits--;
@@ -188,13 +231,12 @@ function SubtractQubit(){ // // Remove all grid lines then redraw them with one 
     })
     canvas.remove(gridGroup);
     DrawGrid();
-    console.log(qubits);
   }
   var SVG = canvas.toSVG(); 
   console.log(SVG);
 }
 
-function SaveToSVG(){
+function SaveToSVG(){ // Creates SVG representation of circuit
   console.log("Save to SVG")
   let file;
   let content = canvas.toSVG(); 
