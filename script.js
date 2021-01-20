@@ -107,11 +107,13 @@ tools.forEach(function(element){ // Build the toolbox
       selectable: true,
       hasBorders: false,
       selectable: false,
+      hoverCursor: 'default',
       hasControls: false
     }
   ))
   originalX = originalX + tileSize + tileSize/2;
 })
+originalX = 0;
 
 /*
 var no_drag_rect_H = new fabric.Group(
@@ -149,6 +151,7 @@ var no_drag_rect_I = new fabric.Group(
 //  |______|  |_|                 the code now
 
 // add objects
+
 /*
 no_drag_rect_H.on('mouseover', function(){ // Spawn new tile when mouse is over a tile in the toolbox
   canvas.add(new fabric.Group(
@@ -162,17 +165,53 @@ no_drag_rect_H.on('mouseover', function(){ // Spawn new tile when mouse is over 
   ));
 })
 */
+
 gridGroup.on('mousedown', function(){ // Make sure grid is always at the back
   canvas.sendToBack(gridGroup);
 })
 
 canvas.on('mouse:over', function(options){
-  console.log('over');
+  try{
+    //console.log( options.target._objects[0].selectable)
+    console.log(options.target.type)
+    if (options.target != gridGroup && !options.target._objects[0].selectable){
+      console.log("hovering")
+      console.log(canvas.getObjects())
+      canvas.add(new fabric.Group(
+        [
+          new fabric.Rect({
+          left: 0, 
+          top: 0, 
+          width: tileSize, 
+          height: tileSize, 
+          fill: searchToolsColor(options.target._objects[1].text), 
+          originX: 'left', 
+          originY: 'top',
+          selectable: true,
+          centeredRotation: true,
+          hasBorders: true,
+          hasControls: false
+        }), 
+          new fabric.Text(options.target._objects[1].text, textField)
+        ], 
+        { left: options.target.left, 
+          top: options.target.top, 
+          selectable: true,
+          hasControls: false,
+          hoverCursor: 'grab',
+          moveCursor: 'grabbing',
+        }
+      ));
+    }
+  }
+  catch(err){
+    // nothing lmao
+  }
 })
 
 canvas.on('mouse:down', function(options){ // Keep track of original tile position
   try{
-    if (options.target.type == 'group' && options.target.type != gridGroup) {
+    if (options.target.type == 'group' && options.target != gridGroup) {
       originalX = options.target.left;
       originalY = options.target.top;
     }
@@ -245,8 +284,8 @@ function DrawGrid(){ // Draw lines
       { stroke: '#ccc', selectable: false }
       )); // y-axis
   }
-  
   canvas.add(gridGroup);
+  canvas.sendToBack(gridGroup)
   canvas.renderAll()
 }
 
@@ -290,3 +329,7 @@ function SaveToSVG(){ // Creates SVG representation of circuit
   document.getElementById('link').href = objectURL;
 }
 
+function searchToolsColor(name){
+  let obj = tools.find(o => o.name === name);
+  return obj.color;
+}
