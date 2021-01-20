@@ -25,50 +25,6 @@ let gridGroup = new fabric.Group([ ], {
   selectable: false
 });
 
-let drag = {
-	left: 0, 
-  top: 0, 
-  width: tileSize, 
-  height: tileSize, 
-  fill: '#7400B8', 
-  originX: 'left', 
-  originY: 'top',
-  selectable: true,
-  centeredRotation: true,
-  hasBorders: true,
-  hasControls: false
-}
-
-let no_drag_H = {
-	left: 0, 
-  top: 0, 
-  width: tileSize, 
-  height: tileSize, 
-  fill: '#7400B8', 
-  originX: 'left', 
-  originY: 'top',
-  selectable: true,
-  centeredRotation: true,
-  hasBorders: false,
-  selectable: false,
-  hasControls: false
-}
-
-let no_drag_I = {
-	left: 0, 
-  top: 0, 
-  width: tileSize, 
-  height: tileSize, 
-  fill: '#80FFDB', 
-  originX: 'left', 
-  originY: 'top',
-  selectable: true,
-  centeredRotation: true,
-  hasBorders: false,
-  selectable: false,
-  hasControls: false
-}
-
 let textField = {
   left: tileSize/2,
   top: tileSize/2,
@@ -152,31 +108,13 @@ var no_drag_rect_I = new fabric.Group(
 
 // add objects
 
-/*
-no_drag_rect_H.on('mouseover', function(){ // Spawn new tile when mouse is over a tile in the toolbox
-  canvas.add(new fabric.Group(
-    [new fabric.Rect(drag), new fabric.Text('H', textField)], 
-    { left: no_drag_rect_H.left, 
-      top: no_drag_rect_H.top, 
-      hasControls: false,
-      hoverCursor: 'grab',
-      moveCursor: 'grabbing',
-    }
-  ));
-})
-*/
-
 gridGroup.on('mousedown', function(){ // Make sure grid is always at the back
   canvas.sendToBack(gridGroup);
 })
 
 canvas.on('mouse:over', function(options){
   try{
-    //console.log( options.target._objects[0].selectable)
-    console.log(options.target.type)
     if (options.target != gridGroup && !options.target._objects[0].selectable){
-      console.log("hovering")
-      console.log(canvas.getObjects())
       canvas.add(new fabric.Group(
         [
           new fabric.Rect({
@@ -223,9 +161,7 @@ canvas.on('mouse:down', function(options){ // Keep track of original tile positi
 
 canvas.on('object:moved', function(options){
   if (options.target.type == 'group' && options.target.type != gridGroup) {
-    console.log(options.target.top)
     if (options.target.left < width && (options.target.top > toolboxOffset) && (options.target.top < toolboxOffset + (gridSize * qubits))){
-      console.log("placing")
       options.target.set({ // Placing in the center of the grid tiles
         left: Math.round(options.target.left / gridSize) * gridSize + (gridSize * (1 - (tileSize/gridSize)))/2,
         top: Math.round(options.target.top / gridSize) * gridSize + (gridSize * (1 - (tileSize/gridSize)))/2,
@@ -329,7 +265,7 @@ function SaveToSVG(){ // Creates SVG representation of circuit
   document.getElementById('link').href = objectURL;
 }
 
-function searchToolsColor(name){
+function searchToolsColor(name){ // Function that returns the tile colour of a gate
   let obj = tools.find(o => o.name === name);
   return obj.color;
 }
