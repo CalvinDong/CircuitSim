@@ -212,19 +212,28 @@ function CalculateIntersection(options){ // Determine if tile is being moved int
 }
 
 function DrawGrid(){ // Draw lines
-  for (var i = 0; i <= qubits; i++){
+  for (var i = 0; i < qubits; i++){
+    gridGroup.addWithUpdate(new fabric.Line(
+        [ 0, (toolboxOffset) + (gridSize * i) + gridSize/2, width,  toolboxOffset + (gridSize * i) + gridSize/2], 
+        { stroke: '#ccc', selectable: false }
+      )); // x-axis
+  }
+
+  /*for (var i = 0; i <= qubits; i++){
     gridGroup.addWithUpdate(new fabric.Line(
         [ 0, (toolboxOffset) + (gridSize * i), width,  toolboxOffset + (gridSize) * i], 
         { stroke: '#ccc', selectable: false }
       )); // x-axis
-  }
+  }*/
   
+  /*
   for (var i = 0; i < (gridSize); i++) {
     gridGroup.addWithUpdate(new fabric.Line(
       [ gridSize * i , toolboxOffset, gridSize * i, toolboxOffset + (gridSize * qubits)], 
       { stroke: '#ccc', selectable: false }
       )); // y-axis
-  }
+  }*/
+
   canvas.add(gridGroup);
   canvas.sendToBack(gridGroup)
   canvas.renderAll()
