@@ -9,17 +9,39 @@ const grid = 25;
 const gridSize = width/grid;
 const tileSize = gridSize * 0.7;
 const toolboxOffset = width/5;
+const cnot = [
+  new fabric.Circle(
+  {
+    radius: tileSize/4,
+    originX: 'center', 
+    originY: 'center',
+    fill: 'transparent',
+    strokeWidth: tileSize/12,
+    stroke: 'white'
+  }),
+  new fabric.Line([ 0, -tileSize/4, 0, tileSize/4], {
+    originX: 'center',
+    originY: 'center',
+    stroke: 'white'
+  }),
+  new fabric.Line([-tileSize/4, 0, tileSize/4, 0], {
+    originX: 'center',
+    originY: 'center',
+    stroke: 'white'
+  })
+]
+
 const tools = [
   {name: 'H', color: '#7400B8'},
   {name: 'I', color: '#6930C3'},
   {name: 'T', color: '#5E60CE'},
   {name: 'S', color: '#5390D9'},
   {name: 'Z', color: '#4EA8DE'},
-  {name: '?', color: '#48BFE3'},
-  {name: '.', color: '#56CFE1'},
-  {name: '<', color: '#64DFDF'},
-  {name: '>', color: '#72EFDD'},
-  {name: '{}', color: '#80FFDB'}
+  {name: 'P', color: '#48BFE3'},
+  {name: 'Y', color: '#56CFE1'},
+  {name: 'U', color: '#64DFDF'},
+  {name: cnot, color: '#72EFDD'},
+  {name: 'NOT', color: '#80FFDB'}
 
 ]
 
@@ -48,36 +70,64 @@ let textField = {
 DrawGrid();
 
 tools.forEach(function(element){ // Build the toolbox
-  canvas.add(new fabric.Group(
-    [new fabric.Rect({
-      left: 0, 
-      top: 0, 
-      width: tileSize, 
-      height: tileSize, 
-      fill: element.color, 
-      originX: 'left', 
-      originY: 'top',
-      selectable: true,
-      centeredRotation: true,
-      hasBorders: false,
-      selectable: false,
-      hasControls: false
-    }), new fabric.Text(element.name, textField)
-  ], 
-    {
-      left: originalX, 
-      top: 0,
-      selectable: true,
-      hasBorders: false,
-      selectable: false,
-      hoverCursor: 'default',
-      hasControls: false
-    }
-  ))
+  if (typeof element.name === 'string'){
+    canvas.add(new fabric.Group(
+      [new fabric.Rect({
+        width: tileSize, 
+        height: tileSize, 
+        fill: element.color, 
+        originX: 'left', 
+        originY: 'top',
+        selectable: true,
+        centeredRotation: true,
+        hasBorders: false,
+        selectable: false,
+      }), new fabric.Text(element.name, textField)
+    ], 
+      {
+        left: originalX, 
+        top: 0,
+        selectable: true,
+        hasBorders: false,
+        selectable: false,
+        hoverCursor: 'default',
+        hasControls: false
+      }
+    ))
+  }
+  else{
+    canvas.add(new fabric.Group(
+      [new fabric.Rect({
+        left: 0, 
+        top: 0, 
+        width: tileSize, 
+        height: tileSize, 
+        fill: element.color, 
+        originX: 'center', 
+        originY: 'center',
+        selectable: true,
+        centeredRotation: true,
+        hasBorders: false,
+        selectable: false,
+        hasControls: false
+      }), new fabric.Group(element.name)
+    ], 
+      {
+        left: originalX, 
+        top: 0,
+        selectable: true,
+        hasBorders: false,
+        selectable: false,
+        hoverCursor: 'default',
+        hasControls: false
+      }
+    ))
+    //canvas.forEachObject(obj => console.log(obj))
+  }
   originalX = originalX + tileSize + tileSize/2;
 })
 originalX = 0;
-
+canvas.forEachObject(obj => console.log(obj))
 /*
 var no_drag_rect_H = new fabric.Group(
   [new fabric.Rect(no_drag_H), new fabric.Text('H', textField)], 
@@ -122,34 +172,64 @@ gridGroup.on('mousedown', function(){ // Make sure grid is always at the back
 canvas.on('mouse:over', function(options){ // Spawn new draggable instance of gate when hovering over said gate tile in toolbox
   try{
     if (options.target != gridGroup && !options.target._objects[0].selectable){
-      canvas.add(new fabric.Group(
-        [
-          new fabric.Rect({
-          left: 0, 
-          top: 0, 
-          width: tileSize, 
-          height: tileSize, 
-          fill: searchToolsColor(options.target._objects[1].text), 
-          originX: 'left', 
-          originY: 'top',
-          selectable: true,
-          centeredRotation: true,
-          hasBorders: true,
-          hasControls: false
-        }), 
-          new fabric.Text(options.target._objects[1].text, textField)
-        ], 
-        { left: options.target.left, 
-          top: options.target.top, 
-          selectable: true,
-          hasControls: false,
-          hoverCursor: 'grab',
-          moveCursor: 'grabbing',
-        }
-      ));
+      if (options.target._objects[1].type == 'text'){
+        canvas.add(new fabric.Group(
+          [
+            new fabric.Rect({
+            left: 0, 
+            top: 0, 
+            width: tileSize, 
+            height: tileSize, 
+            fill: options.target._objects[0].fill, 
+            originX: 'left', 
+            originY: 'top',
+            selectable: true,
+            centeredRotation: true,
+            hasBorders: true,
+            hasControls: false
+          }), 
+            new fabric.Text(options.target._objects[1].text, textField)
+          ], 
+          { left: options.target.left, 
+            top: options.target.top, 
+            selectable: true,
+            hasControls: false,
+            hoverCursor: 'grab',
+            moveCursor: 'grabbing',
+          }
+        ));
+      }
+      else{
+        canvas.add(new fabric.Group(
+          [
+            new fabric.Rect({
+            left: 0, 
+            top: 0, 
+            width: tileSize, 
+            height: tileSize, 
+            fill: options.target._objects[0].fill, 
+            originX: 'center', 
+            originY: 'center',
+            selectable: true,
+            centeredRotation: true,
+            hasBorders: true,
+            hasControls: false
+          }), 
+            new fabric.Group(SearchToolSymbol(options.target._objects[0].fill))
+          ], 
+          { left: options.target.left, 
+            top: options.target.top, 
+            selectable: true,
+            hasControls: false,
+            hoverCursor: 'grab',
+            moveCursor: 'grabbing',
+          }
+        ));
+      }
     }
   }
   catch(err){
+    console.log(err)
     // nothing lmao
   }
 })
@@ -279,7 +359,8 @@ function SaveToSVG(){ // Creates SVG representation of circuit
   document.getElementById('link').href = objectURL;
 }
 
-function searchToolsColor(name){ // Function that returns the tile colour of a gate
-  let obj = tools.find(o => o.name === name);
-  return obj.color;
+function SearchToolSymbol(color){
+  console.log("going")
+  let obj = tools.find(o => o.color === color)
+  return obj.name;
 }
