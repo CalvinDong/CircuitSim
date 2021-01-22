@@ -9,6 +9,13 @@ const grid = 25;
 const gridSize = width/grid;
 const tileSize = gridSize * 0.7;
 const toolboxOffset = width/5;
+
+const drag_rec = {
+  selectable: true,
+  hasControls: false,
+  hoverCursor: 'grab',
+  moveCursor: 'grabbing',}
+
 const cnot = [
   new fabric.Circle(
   {
@@ -30,6 +37,33 @@ const cnot = [
     stroke: 'white'
   })
 ]
+
+const left = new fabric.Group( [
+  new fabric.Circle(
+  {
+    radius: tileSize/4,
+    originX: 'center', 
+    originY: 'center',
+    fill: 'transparent',
+    strokeWidth: tileSize/12,
+    stroke: 'black'
+  }),
+  new fabric.Line([ 0, -tileSize/4, 0, tileSize/4], {
+    originX: 'center',
+    originY: 'center',
+    stroke: 'black'
+  }),
+  new fabric.Line([-tileSize/4, 0, tileSize/4, 0], {
+    originX: 'center',
+    originY: 'center',
+    stroke: 'black'
+  })
+], {
+  left: 400,
+  top: 400
+})
+
+canvas.add(left)
 
 const tools = [
   {name: 'H', color: '#7400B8'},
@@ -55,8 +89,6 @@ let gridGroup = new fabric.Group([ ], {
 });
 
 let textField = {
-  left: tileSize/2,
-  top: tileSize/2,
   fontSize: tileSize/2, 
   originX: 'center', 
   originY: 'center', 
@@ -76,8 +108,8 @@ tools.forEach(function(element){ // Build the toolbox
         width: tileSize, 
         height: tileSize, 
         fill: element.color, 
-        originX: 'left', 
-        originY: 'top',
+        originX: 'center', 
+        originY: 'center',
         selectable: true,
         centeredRotation: true,
         hasBorders: false,
@@ -172,58 +204,44 @@ gridGroup.on('mousedown', function(){ // Make sure grid is always at the back
 canvas.on('mouse:over', function(options){ // Spawn new draggable instance of gate when hovering over said gate tile in toolbox
   try{
     if (options.target != gridGroup && !options.target._objects[0].selectable){
-      if (options.target._objects[1].type == 'text'){
-        canvas.add(new fabric.Group(
-          [
-            new fabric.Rect({
-            left: 0, 
-            top: 0, 
-            width: tileSize, 
-            height: tileSize, 
-            fill: options.target._objects[0].fill, 
-            originX: 'left', 
-            originY: 'top',
-            selectable: true,
-            centeredRotation: true,
-            hasBorders: true,
-            hasControls: false
-          }), 
-            new fabric.Text(options.target._objects[1].text, textField)
-          ], 
-          { left: options.target.left, 
+      let drag_rect = {
+        width: tileSize, 
+        height: tileSize, 
+        fill: options.target._objects[0].fill, 
+        originX: 'center', 
+        originY: 'center',
+        selectable: true,
+        centeredRotation: true,
+        hasBorders: true,
+        hasControls: false
+      }
+
+      let drag_group =  { left: options.target.left, 
             top: options.target.top, 
             selectable: true,
             hasControls: false,
             hoverCursor: 'grab',
             moveCursor: 'grabbing',
           }
+      if (options.target._objects[1].type == 'text'){
+        canvas.add(new fabric.Group(
+          [
+            new fabric.Rect(drag_rect), 
+            new fabric.Text(options.target._objects[1].text, textField)
+          ], 
+          drag_group
         ));
       }
       else{
         canvas.add(new fabric.Group(
           [
-            new fabric.Rect({
-            left: 0, 
-            top: 0, 
-            width: tileSize, 
-            height: tileSize, 
-            fill: options.target._objects[0].fill, 
-            originX: 'center', 
-            originY: 'center',
-            selectable: true,
-            centeredRotation: true,
-            hasBorders: true,
-            hasControls: false
-          }), 
-            new fabric.Group(SearchToolSymbol(options.target._objects[0].fill))
+            new fabric.Rect(drag_rect), 
+            new fabric.Group(SearchToolSymbol(options.target._objects[0].fill), {
+              originX: 'center',
+              originY: 'center'
+            })
           ], 
-          { left: options.target.left, 
-            top: options.target.top, 
-            selectable: true,
-            hasControls: false,
-            hoverCursor: 'grab',
-            moveCursor: 'grabbing',
-          }
+          drag_group
         ));
       }
     }
