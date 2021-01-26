@@ -16,7 +16,7 @@ const drag_rec = {
   hoverCursor: 'grab',
   moveCursor: 'grabbing',}
 
-const cnot = [
+const not = [
   new fabric.Circle(
   {
     radius: tileSize/4,
@@ -29,7 +29,7 @@ const cnot = [
   new fabric.Line([ 0, -tileSize/4, 0, tileSize/4], {
     originX: 'center',
     originY: 'center',
-    stroke: 'white'
+    stroke: 'white',
   }),
   new fabric.Line([-tileSize/4, 0, tileSize/4, 0], {
     originX: 'center',
@@ -38,32 +38,49 @@ const cnot = [
   })
 ]
 
-const left = new fabric.Group( [
-  new fabric.Circle(
+const cnot = [
+  new fabric.Circle(                    /// FIX THE MOVING SHAPES WHILE HOVERING ISSUE
   {
-    radius: tileSize/4,
+    radius: tileSize/6,
     originX: 'center', 
     originY: 'center',
+    top: tileSize/4,
     fill: 'transparent',
     strokeWidth: tileSize/12,
-    stroke: 'black'
+    stroke: 'GREY'
   }),
-  new fabric.Line([ 0, -tileSize/4, 0, tileSize/4], {
+  new fabric.Line([ 0, -tileSize/6, 0, tileSize/6], {
     originX: 'center',
     originY: 'center',
-    stroke: 'black'
+    top: tileSize/4,
+    stroke: 'GREY'
   }),
-  new fabric.Line([-tileSize/4, 0, tileSize/4, 0], {
+  new fabric.Line([-tileSize/6, 0, tileSize/6, 0], {
     originX: 'center',
     originY: 'center',
-    stroke: 'black'
+    top: tileSize/4,
+    stroke: 'GREY'
+  }),
+  new fabric.Line([0,-tileSize/5, 0, tileSize/6], {
+    originX: 'center',
+    originY: 'center',
+    stroke: 'GREY'
+  }),
+  new fabric.Line([ 0, -tileSize/6, 0, tileSize/6], {
+    originX: 'center',
+    originY: 'center',
+    top: -tileSize/4,
+    stroke: 'GREY',
+    angle: 45
+  }),
+  new fabric.Line([-tileSize/6, 0, tileSize/6, 0], {
+    originX: 'center',
+    originY: 'center',
+    top: -tileSize/4,
+    stroke: 'GREY',
+    angle: 45
   })
-], {
-  left: 400,
-  top: 400
-})
-
-canvas.add(left)
+]
 
 const tools = [
   {name: 'H', color: '#7400B8'},
@@ -74,8 +91,8 @@ const tools = [
   {name: 'P', color: '#48BFE3'},
   {name: 'Y', color: '#56CFE1'},
   {name: 'U', color: '#64DFDF'},
-  {name: cnot, color: '#72EFDD'},
-  {name: 'NOT', color: '#80FFDB'}
+  {name: not, color: '#72EFDD'},
+  {name: cnot, color: '#80FFDB'}
 
 ]
 
@@ -201,6 +218,7 @@ gridGroup.on('mousedown', function(){ // Make sure grid is always at the back
   canvas.sendToBack(gridGroup);
 })
 
+/*
 canvas.on('mouse:over', function(options){ // Spawn new draggable instance of gate when hovering over said gate tile in toolbox
   try{
     if (options.target != gridGroup && !options.target._objects[0].selectable){
@@ -215,7 +233,6 @@ canvas.on('mouse:over', function(options){ // Spawn new draggable instance of ga
         hasBorders: true,
         hasControls: false
       }
-
       let drag_group =  { left: options.target.left, 
             top: options.target.top, 
             selectable: true,
@@ -238,7 +255,7 @@ canvas.on('mouse:over', function(options){ // Spawn new draggable instance of ga
             new fabric.Rect(drag_rect), 
             new fabric.Group(SearchToolSymbol(options.target._objects[0].fill), {
               originX: 'center',
-              originY: 'center'
+              originY: 'center',
             })
           ], 
           drag_group
@@ -288,6 +305,7 @@ canvas.on('object:moved', function(options){
   }
   //console.log(canvas.getObjects())
 });
+*/
 
 function SnapToPreviousPosition(options){ // If tile is not placed in a permitted area, then put it back to where it came from
   console.log("back to where you belong")
@@ -382,3 +400,87 @@ function SearchToolSymbol(color){
   let obj = tools.find(o => o.color === color)
   return obj.name;
 }
+
+const circleCross = [new fabric.Circle(                  
+  {
+    radius: tileSize/3,
+    originX: 'center', 
+    originY: 'center',
+    top: tileSize/4,
+    fill: 'transparent',
+    strokeWidth: tileSize/12,
+    stroke: 'GREY',
+    name: 'heya'
+  }),
+  new fabric.Line([ 0, -tileSize/3, 0, tileSize/3], {
+    originX: 'center',
+    originY: 'center',
+    top: tileSize/4,
+    stroke: 'GREY'
+  }),
+  new fabric.Line([-tileSize/3, 0, tileSize/3, 0], {
+    originX: 'center',
+    originY: 'center',
+    top: tileSize/4,
+    stroke: 'GREY'
+  }),
+]
+
+canvas.add(new fabric.Group(
+  circleCross,
+  {
+    top: 500,
+    left: 500,
+    hasControls: false
+  }
+))
+
+const canvasObjects = canvas.getObjects()
+let topCir = canvasObjects[canvasObjects.length -1].top
+let leftCir = canvasObjects[canvasObjects.length -1].left
+console.log(canvasObjects[canvasObjects.length -1].top)
+console.log(canvasObjects[canvasObjects.length -1].left + canvasObjects[canvasObjects.length -1]._objects[0].radius/2)
+console.log(canvasObjects)
+
+canvas.add(new fabric.Line(
+  [
+    canvasObjects[canvasObjects.length -1].left + canvasObjects[canvasObjects.length -1]._objects[0].radius, 
+    canvasObjects[canvasObjects.length -1].top,
+    canvasObjects[canvasObjects.length -1].left + canvasObjects[canvasObjects.length -1]._objects[0].radius,
+    canvasObjects[canvasObjects.length -1].top - 50
+  ],
+  {
+    stroke: 'black'
+  }
+))
+console.log(canvasObjects)
+canvas.add(new fabric.Group(
+  [
+    new fabric.Line([
+      -canvasObjects[canvasObjects.length -1]._objects[0].radius,
+      0,
+      canvasObjects[canvasObjects.length -1]._objects[0].radius,
+      0
+    ],
+    {
+      originY: 'center',
+      originX: 'center',
+      stroke: 'black',
+      angle: 45
+    })
+  ],
+  {
+    top: topCir - 50,
+    left: leftCir
+  }
+))
+
+canvas.on("mouse:down", function(options){
+  if (options.target){
+    let theArray = canvas.getObjects()
+    let theFind = theArray.find(element => element == options.target)
+    console.log(theArray)
+  }
+}) //there is also mouse:down:before
+
+console.log(canvas.getObjects())
