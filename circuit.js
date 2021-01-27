@@ -401,7 +401,8 @@ function SearchToolSymbol(color){
   return obj.name;
 }
 
-const circleCross = [new fabric.Circle(                  
+const circleCross = [
+  new fabric.Circle(                  
   {
     radius: tileSize/3,
     originX: 'center', 
@@ -431,7 +432,8 @@ canvas.add(new fabric.Group(
   {
     top: 500,
     left: 500,
-    hasControls: false
+    hasControls: false,
+    selectable: true
   }
 ))
 
@@ -454,33 +456,68 @@ canvas.add(new fabric.Line(
   }
 ))
 console.log(canvasObjects)
-canvas.add(new fabric.Group(
-  [
-    new fabric.Line([
-      -canvasObjects[canvasObjects.length -1]._objects[0].radius,
-      0,
-      canvasObjects[canvasObjects.length -1]._objects[0].radius,
-      0
+
+const cnotDot = {
+  originX: 'center',
+  top: topCir - 50,
+  left: leftCir + tileSize/3,
+  radius: 3,
+  name: 'cnotDot'
+}
+
+
+canvas.add(new fabric.Circle(cnotDot))
+
+canvas.on("mouse:over", function(options){
+  if (options.target && options.target._objects === circleCross){
+    console.log("over")
+    let theArray = canvas.getObjects()
+    let theFind = theArray.findIndex(element => element === options.target)
+    let one = (canvas.item(theFind))
+    one.clone()
+    let two = canvas.item(theFind + 1)
+    two.clone();
+    canvas.remove(theFind - 1)
+    let three = canvas.item(theFind + 2)
+    three.clone()
+    canvas.remove(canvas.item(theFind))
+    canvas.remove(canvas.item(theFind))
+    canvas.remove(canvas.item(theFind))
+    canvas.add(new fabric.Group([
+      one, two, three
     ],
     {
-      originY: 'center',
-      originX: 'center',
-      stroke: 'black',
-      angle: 45
+      hasControls: false
     })
-  ],
-  {
-    top: topCir - 50,
-    left: leftCir
+    )
+    canvas.renderAll()
+    console.log(canvas.getObjects())
   }
-))
+  console.log(options.target)
+  console.log(cnotDot)
+  if (options.target && options.target.name === 'cnotDot'){
+    console.log("i see not")
+  }
+})
 
-canvas.on("mouse:down", function(options){
-  if (options.target){
-    let theArray = canvas.getObjects()
-    let theFind = theArray.find(element => element == options.target)
-    console.log(theArray)
+/*
+canvas.on("mouse:out", function(options){
+  if (options.target && options.target.type == 'group' && options.target._objects.length === 3 && mouseOverState){
+    console.log("three")
+    //console.log(options.target._objects[0].clone())
+    let one = options.target._objects[0];
+    console.log(one)
+    let two = options.target._objects[1];
+    let three = options.target._objects[2];
+    canvas.add(one)
+    canvas.add(two)
+    canvas.add(three)
+    canvas.remove(options.target)
+    //options.target.ungroupOnCanvas()
+    canvas.renderAll()
+    console.log(canvas.getObjects())
   }
-}) //there is also mouse:down:before
+})
+*/
 
 console.log(canvas.getObjects())
