@@ -401,6 +401,8 @@ function SearchToolSymbol(color){
   return obj.name;
 }
 
+
+
 const circleCross = [
   new fabric.Circle(                  
   {
@@ -411,7 +413,7 @@ const circleCross = [
     fill: 'transparent',
     strokeWidth: tileSize/12,
     stroke: 'GREY',
-    name: 'heya'
+    name: 'circleCross'
   }),
   new fabric.Line([ 0, -tileSize/3, 0, tileSize/3], {
     originX: 'center',
@@ -444,6 +446,7 @@ console.log(canvasObjects[canvasObjects.length -1].top)
 console.log(canvasObjects[canvasObjects.length -1].left + canvasObjects[canvasObjects.length -1]._objects[0].radius/2)
 console.log(canvasObjects)
 
+/*
 canvas.add(new fabric.Line(
   [
     canvasObjects[canvasObjects.length -1].left + canvasObjects[canvasObjects.length -1]._objects[0].radius, 
@@ -454,14 +457,18 @@ canvas.add(new fabric.Line(
   {
     stroke: 'black'
   }
-))
+))*/
+
+canvas.add(new fabric.Path(`M ${leftCir + canvasObjects[canvasObjects.length -1]._objects[0].radius} ${topCir} V ${topCir - 50}`, {stroke: 'black', objectCaching: false}))
+
 console.log(canvasObjects)
 
 const cnotDot = {
   originX: 'center',
   top: topCir - 50,
   left: leftCir + tileSize/3,
-  radius: 3,
+  radius: 5,
+  hasControls: false,
   name: 'cnotDot'
 }
 
@@ -487,16 +494,18 @@ canvas.on("mouse:over", function(options){
       one, two, three
     ],
     {
-      hasControls: false
+      hasControls: false,
+      name: 'cnot'
     })
     )
     canvas.renderAll()
     console.log(canvas.getObjects())
   }
-  console.log(options.target)
-  console.log(cnotDot)
+  //console.log(options.target)
+  //console.log(cnotDot)
   if (options.target && options.target.name === 'cnotDot'){
     console.log("i see not")
+
   }
 })
 
@@ -519,5 +528,23 @@ canvas.on("mouse:out", function(options){
   }
 })
 */
+
+canvas.on("object:moving", function(options){
+  if (options.target.type == 'group' && options.target.name == 'cnot'){
+    console.log("mouse up")
+  }
+  if (options.target.type == 'circle' && options.target.name == 'cnotDot'){
+    console.log("mouse up in this")
+    let theArray = canvas.getObjects()
+    let theFind = theArray.findIndex(element => element === options.target)
+    console.log(canvas.item(theFind - 1))
+    canvas.item(theFind - 1).path[1][1] = canvas.item(theFind).left
+    canvas.item(theFind - 1).path[1][2] = canvas.item(theFind).top
+    //canvas.item(theFind-1).x1 = canvas.item(theFind).left 
+    //canvas.item(theFind-1).y1 = canvas.item(theFind).top
+    //console.log(canvas.item(theFind - 1).x1)
+    canvas.renderAll()
+  }
+})
 
 console.log(canvas.getObjects())
