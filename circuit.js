@@ -459,7 +459,7 @@ canvas.add(new fabric.Line(
   }
 ))*/
 
-canvas.add(new fabric.Path(`M ${leftCir + canvasObjects[canvasObjects.length -1]._objects[0].radius} ${topCir} V ${topCir - 50}`, {stroke: 'black', objectCaching: false}))
+canvas.add(new fabric.Path(`M ${leftCir + canvasObjects[canvasObjects.length -1]._objects[0].radius} ${topCir} V ${topCir - 50}`, {stroke: 'grey', objectCaching: false}))
 
 console.log(canvasObjects)
 
@@ -475,6 +475,8 @@ const cnotDot = {
 
 canvas.add(new fabric.Circle(cnotDot))
 
+
+var xAxis;
 canvas.on("mouse:over", function(options){
   if (options.target && options.target._objects === circleCross){
     console.log("over")
@@ -503,9 +505,9 @@ canvas.on("mouse:over", function(options){
   }
   //console.log(options.target)
   //console.log(cnotDot)
-  if (options.target && options.target.name === 'cnotDot'){
+  if (options.target && options.target.type == 'circle' && options.target.name == 'cnotDot'){
     console.log("i see not")
-
+    xAxis = options.target.left
   }
 })
 
@@ -529,16 +531,18 @@ canvas.on("mouse:out", function(options){
 })
 */
 
+
 canvas.on("object:moving", function(options){
   if (options.target.type == 'group' && options.target.name == 'cnot'){
     console.log("mouse up")
   }
   if (options.target.type == 'circle' && options.target.name == 'cnotDot'){
-    console.log("mouse up in this")
+    //console.log("mouse up in this")
     let theArray = canvas.getObjects()
     let theFind = theArray.findIndex(element => element === options.target)
-    console.log(canvas.item(theFind - 1))
-    canvas.item(theFind - 1).path[1][1] = canvas.item(theFind).left
+    if (options.target.left != xAxis){
+      options.target.set({left: xAxis})
+    }
     canvas.item(theFind - 1).path[1][2] = canvas.item(theFind).top
     //canvas.item(theFind-1).x1 = canvas.item(theFind).left 
     //canvas.item(theFind-1).y1 = canvas.item(theFind).top
