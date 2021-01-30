@@ -429,14 +429,18 @@ const circleCross = [
   }),
 ]
 
+const cnotCross = 
+{
+  top: 500,
+  left: 500,
+  hasControls: false,
+  selectable: true,
+  name: 'cnotCross'
+}
+
 canvas.add(new fabric.Group(
   circleCross,
-  {
-    top: 500,
-    left: 500,
-    hasControls: false,
-    selectable: true
-  }
+  cnotCross
 ))
 
 const canvasObjects = canvas.getObjects()
@@ -478,7 +482,7 @@ canvas.add(new fabric.Circle(cnotDot))
 
 var xAxis;
 canvas.on("mouse:over", function(options){
-  if (options.target && options.target._objects === circleCross){
+  if (options.target && options.target.name == 'cnotCross'){
     console.log("over")
     let theArray = canvas.getObjects()
     let theFind = theArray.findIndex(element => element === options.target)
@@ -506,17 +510,14 @@ canvas.on("mouse:over", function(options){
   //console.log(options.target)
   //console.log(cnotDot)
   if (options.target && options.target.type == 'circle' && options.target.name == 'cnotDot'){
-    console.log("i see not")
     xAxis = options.target.left
   }
 })
 
-/*
 canvas.on("mouse:out", function(options){
-  if (options.target && options.target.type == 'group' && options.target._objects.length === 3 && mouseOverState){
-    console.log("three")
+  if (options.target && options.target.type == 'group' && options.target.name == 'cnot'){
     //console.log(options.target._objects[0].clone())
-    let one = options.target._objects[0];
+    /*let one = options.target._objects[0];
     console.log(one)
     let two = options.target._objects[1];
     let three = options.target._objects[2];
@@ -526,10 +527,34 @@ canvas.on("mouse:out", function(options){
     canvas.remove(options.target)
     //options.target.ungroupOnCanvas()
     canvas.renderAll()
-    console.log(canvas.getObjects())
+    console.log(canvas.getObjects())*/
+    options.target._objects[0].clone(function(clonedObj){
+      clonedObj.set(cnotCross)
+      clonedObj.set({left: options.target.left, top: options.target.top + (options.target.height - clonedObj.height)})
+      console.log(clonedObj)
+      canvas.add(clonedObj)
+      //canvas.remove(options.target)
+    })
+    options.target._objects[1].clone(function(clonedObj){
+      clonedObj.set(
+        {
+        left: options.target.left + (options.target.width/2), 
+        top: options.target.top + (options.target._objects[0].height/2),
+        objectCaching: false
+      }
+        )
+      canvas.add(clonedObj)
+      //canvas.remove(options.target)
+    })
+    options.target._objects[2].clone(function(clonedObj){
+      clonedObj.set(cnotDot)
+      clonedObj.set({left: options.target.left + (options.target.width/2), top: options.target.top})
+      canvas.add(clonedObj)
+      //canvas.remove(options.target)
+    })
+    canvas.remove(options.target)
   }
 })
-*/
 
 
 canvas.on("object:moving", function(options){
