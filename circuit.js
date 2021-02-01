@@ -218,6 +218,7 @@ gridGroup.on('mousedown', function(){ // Make sure grid is always at the back
   canvas.sendToBack(gridGroup);
 })
 
+/*
 canvas.on('mouse:over', function(options){ // Spawn new draggable instance of gate when hovering over said gate tile in toolbox
   try{
     if (options.target != gridGroup && !options.target._objects[0].selectable){
@@ -304,6 +305,7 @@ canvas.on('object:moved', function(options){
   }
   //console.log(canvas.getObjects())
 });
+*/
 
 function SnapToPreviousPosition(options){ // If tile is not placed in a permitted area, then put it back to where it came from
   console.log("back to where you belong")
@@ -400,7 +402,7 @@ function SearchToolSymbol(color){
 }
 
 
-/*
+
 const circleCross = [
   new fabric.Circle(                  
   {
@@ -471,6 +473,7 @@ canvas.on("mouse:over", function(options){
     console.log("over")
     let theArray = canvas.getObjects()
     let theFind = theArray.findIndex(element => element === options.target)
+    console.log(canvas.item(theFind))
     let one = (canvas.item(theFind))
     one.clone()
     let two = canvas.item(theFind + 1)
@@ -490,7 +493,7 @@ canvas.on("mouse:over", function(options){
     })
     )
     canvas.renderAll()
-    console.log(canvas.getObjects())
+    //console.log(canvas.getObjects())
   }
   //console.log(options.target)
   //console.log(cnotDot)
@@ -504,24 +507,16 @@ canvas.on("mouse:out", function(options){
     options.target._objects[0].clone(function(clonedObj){
       clonedObj.set(cnotCross)
       clonedObj.set({left: options.target.left, top: options.target.top + (options.target.height - clonedObj.height)})
-      console.log(clonedObj)
       canvas.add(clonedObj)
       //canvas.remove(options.target)
     })
-    options.target._objects[1].clone(function(clonedObj){
-      clonedObj.set(
-        {
-        left: options.target.left + (options.target.width/2), 
-        top: options.target.top + (options.target._objects[0].height/2),
-        objectCaching: false
-      }
-        )
-      canvas.add(clonedObj)
-      //canvas.remove(options.target)
-    })
+    console.log(canvasObjects)
+    canvas.add(new fabric.Path(`M ${options.target.left + (options.target._objects[0]._objects[0].radius)} ${options.target.top + (cnotDot.radius*2) + (options.target.height - circleCross[0].radius*2)} V ${options.target.top + (cnotDot.radius*2)}`, {stroke: 'grey', objectCaching: false}))
+
     options.target._objects[2].clone(function(clonedObj){
       clonedObj.set(cnotDot)
-      clonedObj.set({left: options.target.left + (options.target.width/2), top: options.target.top})
+      //console.log(options.target)
+      clonedObj.set({left: options.target.left + (options.target._objects[0]._objects[0].radius), top: options.target.top})
       canvas.add(clonedObj)
       //canvas.remove(options.target)
     })
@@ -532,12 +527,12 @@ canvas.on("mouse:out", function(options){
 
 canvas.on("object:moving", function(options){
   if (options.target.type == 'circle' && options.target.name == 'cnotDot'){
-    //console.log("mouse up in this")
+    console.log("mouse up in this")
     let theArray = canvas.getObjects()
     let theFind = theArray.findIndex(element => element === options.target)
-    if (options.target.left != xAxis){
+    /*if (options.target.left != xAxis){
       options.target.set({left: xAxis})
-    }
+    }*/
     canvas.item(theFind - 1).path[1][2] = canvas.item(theFind).top
     //canvas.item(theFind-1).x1 = canvas.item(theFind).left 
     //canvas.item(theFind-1).y1 = canvas.item(theFind).top
@@ -546,4 +541,4 @@ canvas.on("object:moving", function(options){
   }
 })
 
-console.log(canvas.getObjects())*/
+console.log(canvas.getObjects())
