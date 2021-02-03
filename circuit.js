@@ -10,6 +10,7 @@ const gridSize = width/grid;
 const tileSize = gridSize * 0.7;
 const toolboxOffset = width/5;
 const distMulti = gridSize;
+const lineStrokeWidth = 1;
 
 const no_drag_rect = 
   {
@@ -274,12 +275,12 @@ canvas.on('mouse:down', function(options){ // Keep track of original tile positi
 })
 
 canvas.on('object:moved', function(options){
-  if (options.target.type == 'group' && options.target.type != gridGroup) {
+  if (options.target.selectable && options.target.type != gridGroup) {
     if (options.target.left < width && (options.target.top > toolboxOffset) && (options.target.top < toolboxOffset + (gridSize * qubits))){
       options.target.set({ // Placing in the center of the grid tiles
-        left: Math.round(options.target.left / gridSize) * gridSize + (gridSize * (1 - (tileSize/gridSize)))/2,
-        top: Math.round(options.target.top / gridSize) * gridSize + (gridSize * (1 - (tileSize/gridSize)))/2,
-        hasControls: true
+        left: (Math.round(options.target.left/gridSize) * gridSize) + Math.round((gridSize/2 - options.target.width/2)),
+        top: (Math.round((options.target.top - toolboxOffset)/gridSize)) * gridSize + toolboxOffset + Math.round(gridSize/2 - options.target.width/2),
+        //hasControls: true
       });
       CalculateIntersection(options);
     }
@@ -288,14 +289,11 @@ canvas.on('object:moved', function(options){
       canvas.remove(options.target);
     }
     else{
-      SnapToPreviousPosition(options);
+      //SnapToPreviousPosition(options);
     }
-    canvas.renderAll();
-    options.target.set('hasControls', false) // Reveal and unreveal hasControls to keep interactivity bug free please
-    //options.target.set('fill', 'green');
+    options.target.setCoords();
     canvas.renderAll();
   }
-  //console.log(canvas.getObjects())
 });
 
 
@@ -304,43 +302,71 @@ function SnapToPreviousPosition(options){ // If tile is not placed in a permitte
   options.target.set({
     left: originalX,
     top: originalY,
-    hasControls: true
   });
+  options.target.setCoords()
 }
 
 function CalculateIntersection(options){ // Determine if tile is being moved into grid with already exiting tile
-  options.target.setCoords();
   canvas.forEachObject(function(obj) {
-    if (obj === options.target) return;
+    if (obj === options.target) {
+      return;
+    }
+    if (((obj.type == 'path' && obj.parent != options.target) && (obj.type == 'path' && obj.child != options.target))){
+      if (options.target.intersectsWithVertPath(obj)){
+        SnapToPreviousPosition(options)
+        return;
+      }
+    }
     if (options.target.intersectsWithObject(obj) && obj != gridGroup) {
-      snapped = true
       SnapToPreviousPosition(options)
+      return;
     }
   });
 }
 
+fabric.Object.prototype.intersectsWithVertPath = function(obj) {
+  let topLeft;
+  let bottomRight;
+  if (obj.path[0][2] > obj.path[1][2]){
+    topLeft = new fabric.Point(obj.path[0][1] - lineStrokeWidth/2, obj.path[0][2])
+    bottomRight = new fabric.Point(obj.path[1][1] + lineStrokeWidth/2, obj.path[1][2])
+  }
+  if (obj.path[0][2] < obj.path[1][2]){
+    topLeft = new fabric.Point(obj.path[1][1] - lineStrokeWidth/2, obj.path[1][2])
+    bottomRight = new fabric.Point(obj.path[0][1] + lineStrokeWidth/2, obj.path[0][2])
+  }
+  if (obj.path[0][2] == obj.path[1][2]){
+    return false;
+  }
+  console.log(topLeft)
+  console.log(bottomRight)
+  return (this.intersectsWithRect(topLeft, bottomRight))
+}
+
+//function intersectsWithPath
+
 function DrawGrid(){ // Draw lines
-  for (var i = 0; i < qubits; i++){
+  /*for (var i = 0; i < qubits; i++){
     gridGroup.addWithUpdate(new fabric.Line(
         [ 0, (toolboxOffset) + (gridSize * i) + gridSize/2, width,  toolboxOffset + (gridSize * i) + gridSize/2], 
         { stroke: '#ccc', selectable: false }
       )); // x-axis
-  }
+  }*/
 
-  /*for (var i = 0; i <= qubits; i++){
+  for (var i = 0; i <= qubits; i++){
     gridGroup.addWithUpdate(new fabric.Line(
         [ 0, (toolboxOffset) + (gridSize * i), width,  toolboxOffset + (gridSize) * i], 
         { stroke: '#ccc', selectable: false }
       )); // x-axis
-  }*/
+  }
   
-  /*
+  
   for (var i = 0; i < (gridSize); i++) {
     gridGroup.addWithUpdate(new fabric.Line(
       [ gridSize * i , toolboxOffset, gridSize * i, toolboxOffset + (gridSize * qubits)], 
       { stroke: '#ccc', selectable: false }
       )); // y-axis
-  }*/
+  }
 
   canvas.add(gridGroup);
   canvas.sendToBack(gridGroup)
@@ -393,7 +419,19 @@ function SearchToolSymbol(color){
   return obj.name;
 }
 
-
+function CnotReset(options){
+  options.target.child.set(
+    {
+      left: options.target.left + options.target.width/2 - options.target.child.width/2, 
+      top: options.target.top + gridSize/1.5
+    }
+  );
+  options.target.child.setCoords();
+  options.target.line.path[0][1] = options.target.left + options.target.width/2;
+  options.target.line.path[0][2] = options.target.top + options.target.width/2;
+  options.target.line.path[1][1] = options.target.child.left + options.target.child.radius;
+  options.target.line.path[1][2] = options.target.child.top;
+}
 
 const circleCross = [
   new fabric.Circle(                  
@@ -423,15 +461,15 @@ const circleCross = [
 
 const cnotCross = 
 {
-  originX: 'center',
-  originY: 'center',
   top: 500,
   left: 500,
   hasControls: false,
   selectable: true,
   name: 'cnotCross',
   child: null,
-  line: null
+  line: null,
+  hoverCursor: 'grab',
+  moveCursor: 'grabbing',
 }
 
 canvas.add(new fabric.Group(
@@ -444,22 +482,26 @@ let topCir = canvasObjects[canvasObjects.length -1].top
 let leftCir = canvasObjects[canvasObjects.length -1].left
 
 const cnotDot = {
-  originX: 'center',
-  originY: 'center',
+  //originX: 'center',
+  //originY: 'center',
   dist: gridSize,
-  left: canvasObjects[canvasObjects.length -1].left,
-  top: canvasObjects[canvasObjects.length -1].top + gridSize/2,
+  left: canvasObjects[canvasObjects.length -1].left + ((canvasObjects[canvasObjects.length -1].width/2) - 5 ),
+  top: canvasObjects[canvasObjects.length -1].top + gridSize/1.5,
   radius: 5,
   hasControls: false,
+  hoverCursor: 'grab',
+  moveCursor: 'grabbing',
   name: 'cnotDot',
   parent: null,
   line: null,
-  xAxis: null
+  xAxis: null,
 }
 
 canvas.add(new fabric.Circle(cnotDot))
 
-canvas.add(new fabric.Path('M 0 0 L 0 0', {stroke: 'grey', objectCaching: false}))
+canvas.add(new fabric.Path('M 0 0 L 0 0', {stroke: 'grey', strokeWidth: lineStrokeWidth, objectCaching: false, parent: null, child: null}))
+
+//canvas.add(new fabric.Line([0,0,0,0], {stroke: 'grey', objectCaching: false}))
 
 let tempCnotCross;
 let tempDot;
@@ -473,35 +515,43 @@ tempCnotCross.child = tempDot;
 tempDot.parent = tempCnotCross;
 tempCnotCross.line = tempLine;
 tempDot.line = tempLine;
+tempLine.parent = tempCnotCross;
+tempLine.child = tempDot;
 tempCenter = tempCnotCross.getCenterPoint()
 console.log(tempCnotCross.getCenterPoint())
 tempLine.path[0][1] = tempCenter.x;
 tempLine.path[0][2] = tempCenter.y;
 tempLine.path[1][1] = tempCenter.x;
 tempLine.path[1][2] = tempDot.top;
+/*tempLine.set({
+  x1: tempCenter.x ,
+  y1: tempCenter.y,
+  x2: tempCenter.x,
+  y2: tempDot.top
+})*/
 tempLine.sendToBack()
 
 
 console.log(canvas.getObjects())
 
-canvas.on('object:moving', function(options){
+canvas.on('object:moving', function(options){ // Makes multi gates behave when dragged, 
+                                              // SHOULD REALLY LOOK AT MAKING ORIGINS AROUND X TO AVOID CALCULATIONS
   if (options.target && options.target.name == 'cnotDot'){
-    options.target.set({left: options.target.parent.left})
-    options.target.line.path[1][1] = options.target.left;
+    options.target.set({left: options.target.parent.left + options.target.parent.width/2 - options.target.radius})
+    options.target.line.path[1][1] = options.target.left + options.target.radius;
     options.target.line.path[1][2] = options.target.top;
+    /*options.target.line.set({
+      x2: options.target.left + options.target.radius,
+      y2: options.target.top
+    })*/
   }
   if (options.target && options.target.name == 'cnotCross'){
-    options.target.child.set({left: options.target.left, top: options.target.top + options.target.child.dist/2});
-    options.target.child.setCoords();
-    options.target.line.path[0][1] = options.target.left;
-    options.target.line.path[0][2] = options.target.top;
-    options.target.line.path[1][1] = options.target.child.left;
-    options.target.line.path[1][2] = options.target.child.top;
+    CnotReset(options);
   }
 })
 
-canvas.on ('selection:created', function(options){
-  if (options.target && options.target.name == 'cnotDot'){
-    options.target.xAxis = options.target.left;
+canvas.on('mouse:up', function(options){
+  if (options.target && options.target.name == 'cnotCross'){
+    CnotReset(options);
   }
 })
