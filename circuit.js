@@ -431,6 +431,8 @@ const circleCross = [
 
 const cnotCross = 
 {
+  originX: 'center',
+  originY: 'center',
   top: 500,
   left: 500,
   hasControls: false,
@@ -445,32 +447,16 @@ canvas.add(new fabric.Group(
   cnotCross
 ))
 
-/*
-canvas.add(new fabric.Circle(
-  {
-    top: 500,
-    left: 500,
-    hasControls: false,
-    selectable: true,
-    radius: tileSize/3,
-    fill: 'transparent'
-  }
-))*/
 let canvasObjects = canvas.getObjects()
 let topCir = canvasObjects[canvasObjects.length -1].top
 let leftCir = canvasObjects[canvasObjects.length -1].left
-//console.log(canvasObjects[canvasObjects.length -1].top)
-//console.log(canvasObjects[canvasObjects.length -1].left + canvasObjects[canvasObjects.length -1]._objects[0].radius/2)
-//console.log(canvasObjects)
-
-//canvas.add(new fabric.Path(`M ${leftCir + canvasObjects[canvasObjects.length -1]._objects[0].radius} ${topCir} V ${topCir - 50}`, {stroke: 'grey', objectCaching: false}))
-console.log(tileSize/3)
 
 const cnotDot = {
-  //originX: 'center',
-  top: topCir - 50,
-  left: leftCir + circleCross[0].radius + circleCross[0].strokeWidth/2 - 5.5, 
-  //left: 508.7885,
+  originX: 'center',
+  originY: 'center',
+  dist: 50,
+  left: canvasObjects[canvasObjects.length -1].left,
+  top: canvasObjects[canvasObjects.length -1].top - 50,
   radius: 5,
   hasControls: false,
   name: 'cnotDot',
@@ -486,6 +472,7 @@ canvas.add(new fabric.Path('M 0 0 L 0 0', {stroke: 'grey', objectCaching: false}
 let tempCnotCross;
 let tempDot;
 let tempLine;
+let tempCenter;
 canvasObjects = canvas.getObjects();
 tempCnotCross = canvasObjects[canvasObjects.length - 3];
 tempDot = canvasObjects[canvasObjects.length - 2];
@@ -494,33 +481,30 @@ tempCnotCross.child = tempDot;
 tempDot.parent = tempCnotCross;
 tempCnotCross.line = tempLine;
 tempDot.line = tempLine;
+tempCenter = tempCnotCross.getCenterPoint()
 console.log(tempCnotCross.getCenterPoint())
-tempLine.path[0][1] = tempCnotCross.left + tempCnotCross.width/2;
-tempLine.path[0][2] = tempCnotCross.top;
-tempLine.path[1][1] = tempCnotCross.left + tempCnotCross.width/2;
-tempLine.path[1][2] = tempDot.top + tempDot.height;
+tempLine.path[0][1] = tempCenter.x;
+tempLine.path[0][2] = tempCenter.y;
+tempLine.path[1][1] = tempCenter.x;
+tempLine.path[1][2] = tempDot.top;
+tempLine.sendToBack()
 
-//canvasObjects[canvasObjects.length - 1].parent = canvasObjects[canvasObjects.length - 2]
-//canvasObjects[canvasObjects.length - 1].parent = canvasObjects[canvasObjects.length - 2]
-//canvasObjects[canvasObjects.length - 2].child = canvasObjects[canvasObjects.length - 1]
+
 console.log(canvas.getObjects())
-
-canvas.on('mouse:over', function(options){
-  /*if (options.target && options.target.name == 'cnotCross'){
-    console.log("ay")
-    options.target.child.set({top: 50, hasControls: false})
-    options.target.child.setCoords()
-    //canvasObjects[canvasObjects.length - 1].set({top: 50})
-    canvas.renderAll()
-    console.log(canvas.getObjects())
-  }*/
-})
 
 canvas.on('object:moving', function(options){
   if (options.target && options.target.name == 'cnotDot'){
-    options.target.set({left: options.target.xAxis})
-    options.target.line.path[1][1] = options.target.left + options.target.radius
-    options.target.line.path[1][2] = options.target.top + options.target.height
+    options.target.set({left: options.target.parent.left})
+    options.target.line.path[1][1] = options.target.left;
+    options.target.line.path[1][2] = options.target.top;
+  }
+  if (options.target && options.target.name == 'cnotCross'){
+    options.target.child.set({left: options.target.left, top: options.target.top - options.target.child.dist});
+    options.target.child.setCoords();
+    options.target.line.path[0][1] = options.target.left;
+    options.target.line.path[0][2] = options.target.top;
+    options.target.line.path[1][1] = options.target.child.left;
+    options.target.line.path[1][2] = options.target.child.top;
   }
 })
 
@@ -529,81 +513,3 @@ canvas.on ('selection:created', function(options){
     options.target.xAxis = options.target.left;
   }
 })
-
-
-/*
-var xAxis;
-canvas.on("mouse:over", function(options){
-  if (options.target && options.target.name == 'cnotCross'){
-    console.log("over")
-    let theArray = canvas.getObjects()
-    let theFind = theArray.findIndex(element => element === options.target)
-    console.log(canvas.item(theFind))
-    let one = (canvas.item(theFind))
-    one.clone()
-    let two = canvas.item(theFind + 1)
-    two.clone();
-    canvas.remove(theFind - 1)
-    let three = canvas.item(theFind + 2)
-    three.clone()
-    canvas.remove(canvas.item(theFind))
-    canvas.remove(canvas.item(theFind))
-    canvas.remove(canvas.item(theFind))
-    canvas.add(new fabric.Group([
-      one, two, three
-    ],
-    {
-      hasControls: false,
-      name: 'cnot'
-    })
-    )
-    canvas.renderAll()
-    //console.log(canvas.getObjects())
-  }
-  //console.log(options.target)
-  //console.log(cnotDot)
-  if (options.target && options.target.type == 'circle' && options.target.name == 'cnotDot'){
-    xAxis = options.target.left
-  }
-})
-
-canvas.on("mouse:out", function(options){
-  if (options.target && options.target.type == 'group' && options.target.name == 'cnot'){
-    options.target._objects[0].clone(function(clonedObj){
-      clonedObj.set(cnotCross)
-      clonedObj.set({left: options.target.left, top: options.target.top + (options.target.height - clonedObj.height)})
-      canvas.add(clonedObj)
-      //canvas.remove(options.target)
-    })
-    console.log(canvasObjects)
-    canvas.add(new fabric.Path(`M ${options.target.left + (options.target._objects[0]._objects[0].radius)} ${options.target.top + (cnotDot.radius*2) + (options.target.height - circleCross[0].radius*2)} V ${options.target.top + (cnotDot.radius*2)}`, {stroke: 'grey', objectCaching: false}))
-
-    options.target._objects[2].clone(function(clonedObj){
-      clonedObj.set(cnotDot)
-      //console.log(options.target)
-      clonedObj.set({left: options.target.left + (options.target._objects[0]._objects[0].radius), top: options.target.top})
-      canvas.add(clonedObj)
-      //canvas.remove(options.target)
-    })
-    canvas.remove(options.target)
-  }
-})
-
-
-canvas.on("object:moving", function(options){
-  if (options.target.type == 'circle' && options.target.name == 'cnotDot'){
-    console.log("mouse up in this")
-    let theArray = canvas.getObjects()
-    let theFind = theArray.findIndex(element => element === options.target)
-    if (options.target.left != xAxis){
-      options.target.set({left: xAxis})
-    }
-    canvas.item(theFind - 1).path[1][2] = canvas.item(theFind).top
-    //canvas.item(theFind-1).x1 = canvas.item(theFind).left 
-    //canvas.item(theFind-1).y1 = canvas.item(theFind).top
-    //console.log(canvas.item(theFind - 1).x1)
-    canvas.renderAll()
-  }
-})
-
-console.log(canvas.getObjects())*/
