@@ -9,6 +9,17 @@ const grid = 25;
 const gridSize = width/grid;
 const tileSize = gridSize * 0.7;
 const toolboxOffset = width/5;
+const distMulti = gridSize;
+
+const no_drag_rect = 
+  {
+    top: 0,
+    selectable: true,
+    hasBorders: false,
+    selectable: false,
+    hoverCursor: 'default',
+    hasControls: false,
+  }
 
 const drag_rec = {
   selectable: true,
@@ -83,16 +94,16 @@ const cnot = [
 ]
 
 const tools = [
-  {name: 'H', color: '#7400B8'},
-  {name: 'I', color: '#6930C3'},
-  {name: 'T', color: '#5E60CE'},
-  {name: 'S', color: '#5390D9'},
-  {name: 'Z', color: '#4EA8DE'},
-  {name: 'P', color: '#48BFE3'},
-  {name: 'Y', color: '#56CFE1'},
-  {name: 'U', color: '#64DFDF'},
-  {name: not, color: '#72EFDD'},
-  {name: cnot, color: '#80FFDB'}
+  {name: 'H', color: '#7400B8', gateType: 'single'},
+  {name: 'I', color: '#6930C3', gateType: 'single'},
+  {name: 'T', color: '#5E60CE', gateType: 'single'},
+  {name: 'S', color: '#5390D9', gateType: 'single'},
+  {name: 'Z', color: '#4EA8DE', gateType: 'single'},
+  {name: 'P', color: '#48BFE3', gateType: 'single'},
+  {name: 'Y', color: '#56CFE1', gateType: 'single'},
+  {name: 'U', color: '#64DFDF', gateType: 'single'},
+  {name: not, color: '#72EFDD', gateType: 'multi'},
+  {name: cnot, color: '#80FFDB', gateType: 'multi'}
 
 ]
 
@@ -119,7 +130,7 @@ let textField = {
 DrawGrid();
 
 tools.forEach(function(element){ // Build the toolbox
-  if (typeof element.name === 'string'){
+  if (element.gateType == 'single'){
     canvas.add(new fabric.Group(
       [new fabric.Rect({
         width: tileSize, 
@@ -134,13 +145,10 @@ tools.forEach(function(element){ // Build the toolbox
       }), new fabric.Text(element.name, textField)
     ], 
       {
+        ...no_drag_rect,
         left: originalX, 
-        top: 0,
-        selectable: true,
-        hasBorders: false,
-        selectable: false,
-        hoverCursor: 'default',
-        hasControls: false
+        name: element.name,
+        gateType: element.gateType
       }
     ))
   }
@@ -162,33 +170,18 @@ tools.forEach(function(element){ // Build the toolbox
       }), new fabric.Group(element.name)
     ], 
       {
+        ...no_drag_rect,
         left: originalX, 
-        top: 0,
-        selectable: true,
-        hasBorders: false,
-        selectable: false,
-        hoverCursor: 'default',
-        hasControls: false
+        name: element.name,
+        gateType: element.gateType
       }
     ))
     //canvas.forEachObject(obj => console.log(obj))
   }
   originalX = originalX + tileSize + tileSize/2;
 })
-originalX = 0;
+originalX = 0; // variable re used to keep track of original tile poisitons later
 canvas.forEachObject(obj => console.log(obj))
-/*
-var no_drag_rect_H = new fabric.Group(
-  [new fabric.Rect(no_drag_H), new fabric.Text('H', textField)], 
-  {left: 0, top: 0}
-)
-
-var no_drag_rect_I = new fabric.Group(
-  [new fabric.Rect(no_drag_I), new fabric.Text('I', textField)], 
-  {left: 0 + tileSize + tileSize/2, top: 0}
-);
-*/
-
 //Create array to add in tiles automatically?
 
 //   _         _______    _______    _    _______     
@@ -218,54 +211,46 @@ gridGroup.on('mousedown', function(){ // Make sure grid is always at the back
   canvas.sendToBack(gridGroup);
 })
 
-/*
 canvas.on('mouse:over', function(options){ // Spawn new draggable instance of gate when hovering over said gate tile in toolbox
-  try{
-    if (options.target != gridGroup && !options.target._objects[0].selectable){
-      let drag_rect = {
-        width: tileSize, 
-        height: tileSize, 
-        fill: options.target._objects[0].fill, 
-        originX: 'center', 
-        originY: 'center',
-        selectable: true,
-        centeredRotation: true,
-        hasBorders: true,
-        hasControls: false
-      }
-      let drag_group =  { left: options.target.left, 
-            top: options.target.top, 
-            selectable: true,
-            hasControls: false,
-            hoverCursor: 'grab',
-            moveCursor: 'grabbing',
-          }
-      if (options.target._objects[1].type == 'text'){
-        canvas.add(new fabric.Group(
-          [
-            new fabric.Rect(drag_rect), 
-            new fabric.Text(options.target._objects[1].text, textField)
-          ], 
-          drag_group
-        ));
-      }
-      else{
-        canvas.add(new fabric.Group(
-          [
-            new fabric.Rect(drag_rect), 
-            new fabric.Group(SearchToolSymbol(options.target._objects[0].fill), {
-              originX: 'center',
-              originY: 'center',
-            })
-          ], 
-          drag_group
-        ));
-      }
+  if (options.target && options.target != gridGroup && !options.target.selectable){
+    let drag_rect = 
+    {
+      width: tileSize, 
+      height: tileSize, 
+      fill: options.target._objects[0].fill, 
+      originX: 'center', 
+      originY: 'center',
     }
-  }
-  catch(err){
-    console.log(err)
-    // nothing lmao
+    let drag_group =  
+    { 
+      left: options.target.left, 
+      top: options.target.top, 
+      hasControls: false,
+      hoverCursor: 'grab',
+      moveCursor: 'grabbing',
+    }
+
+    if (options.target._objects[1].type == 'text'){
+      canvas.add(new fabric.Group(
+        [
+          new fabric.Rect(drag_rect), 
+          new fabric.Text(options.target._objects[1].text, textField)
+        ], 
+        drag_group
+      ));
+    }
+    else{
+      canvas.add(new fabric.Group(
+        [
+          new fabric.Rect(drag_rect), 
+          new fabric.Group(SearchToolSymbol(options.target._objects[0].fill), {
+            originX: 'center',
+            originY: 'center',
+          })
+        ], 
+        drag_group
+      ));
+    }
   }
 })
 
@@ -305,7 +290,7 @@ canvas.on('object:moved', function(options){
   }
   //console.log(canvas.getObjects())
 });
-*/
+
 
 function SnapToPreviousPosition(options){ // If tile is not placed in a permitted area, then put it back to where it came from
   console.log("back to where you belong")
@@ -454,9 +439,9 @@ let leftCir = canvasObjects[canvasObjects.length -1].left
 const cnotDot = {
   originX: 'center',
   originY: 'center',
-  dist: 50,
+  dist: gridSize,
   left: canvasObjects[canvasObjects.length -1].left,
-  top: canvasObjects[canvasObjects.length -1].top - 50,
+  top: canvasObjects[canvasObjects.length -1].top + gridSize/2,
   radius: 5,
   hasControls: false,
   name: 'cnotDot',
@@ -499,7 +484,7 @@ canvas.on('object:moving', function(options){
     options.target.line.path[1][2] = options.target.top;
   }
   if (options.target && options.target.name == 'cnotCross'){
-    options.target.child.set({left: options.target.left, top: options.target.top - options.target.child.dist});
+    options.target.child.set({left: options.target.left, top: options.target.top + options.target.child.dist/2});
     options.target.child.setCoords();
     options.target.line.path[0][1] = options.target.left;
     options.target.line.path[0][2] = options.target.top;
