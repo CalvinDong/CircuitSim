@@ -225,19 +225,26 @@ canvas.on('mouse:over', function(options){ // Spawn new draggable instance of ga
     { 
       left: options.target.left, 
       top: options.target.top, 
+      name: options.target.name, 
+      gateType: options.target.gateType,
       hasControls: false,
       hoverCursor: 'grab',
       moveCursor: 'grabbing',
     }
 
     if (options.target._objects[1].type == 'text'){
-      canvas.add(new fabric.Group(
+      /*canvas.add(new fabric.Group(
         [
           new fabric.Rect(drag_rect), 
           new fabric.Text(options.target._objects[1].text, textField)
         ], 
         drag_group
-      ));
+      ));*/
+      options.target.clone(function(clone){
+        clone.set(drag_group);
+        canvas.add(clone);
+        console.log(canvas.getObjects())
+      });
     }
     else{
       canvas.add(new fabric.Group(
