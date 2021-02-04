@@ -11,6 +11,7 @@ const tileSize = gridSize * 0.7;
 const toolboxOffset = width/5;
 const distMulti = gridSize;
 const lineStrokeWidth = 1;
+const dotRadius = 5;
 
 const no_drag_rect = 
   {
@@ -94,17 +95,67 @@ const cnot = [
   })
 ]
 
+const circleCross = [
+  new fabric.Circle(                  
+  {
+    radius: Math.round(tileSize/3),
+    originX: 'center', 
+    originY: 'center',
+    top: tileSize/4,
+    fill: 'transparent',
+    strokeWidth: Math.round(tileSize/12),
+    stroke: 'GREY',
+    name: 'circleCross'
+  }),
+  new fabric.Line([ 0, -tileSize/3, 0, tileSize/3], {
+    originX: 'center',
+    originY: 'center',
+    top: tileSize/4,
+    stroke: 'GREY'
+  }),
+  new fabric.Line([-tileSize/3, 0, tileSize/3, 0], {
+    originX: 'center',
+    originY: 'center',
+    top: tileSize/4,
+    stroke: 'GREY'
+  }),
+]
+
+const cnotCross = 
+{
+  hasControls: false,
+  selectable: true,
+  name: 'cnotCross',
+  child: null,
+  line: null,
+  hoverCursor: 'grab',
+  moveCursor: 'grabbing',
+}
+
+const cnotDot = {
+  dist: gridSize,
+  radius: dotRadius,
+  hasControls: false,
+  hoverCursor: 'grab',
+  moveCursor: 'grabbing',
+  name: 'cnotDot',
+  parent: null,
+  line: null,
+  xAxis: null,
+  gateType: 'multi'
+}
+
 const tools = [
-  {name: 'H', color: '#7400B8', gateType: 'single'},
-  {name: 'I', color: '#6930C3', gateType: 'single'},
-  {name: 'T', color: '#5E60CE', gateType: 'single'},
-  {name: 'S', color: '#5390D9', gateType: 'single'},
-  {name: 'Z', color: '#4EA8DE', gateType: 'single'},
-  {name: 'P', color: '#48BFE3', gateType: 'single'},
-  {name: 'Y', color: '#56CFE1', gateType: 'single'},
-  {name: 'U', color: '#64DFDF', gateType: 'single'},
-  {name: not, color: '#72EFDD', gateType: 'multi'},
-  {name: cnot, color: '#80FFDB', gateType: 'multi'}
+  {name: 'H', color: '#7400B8', gateType: 'single', symbol: null},
+  {name: 'I', color: '#6930C3', gateType: 'single', symbol: null},
+  {name: 'T', color: '#5E60CE', gateType: 'single', symbol: null},
+  {name: 'S', color: '#5390D9', gateType: 'single', symbol: null},
+  {name: 'Z', color: '#4EA8DE', gateType: 'single', symbol: null},
+  {name: 'P', color: '#48BFE3', gateType: 'single', symbol: null},
+  {name: 'Y', color: '#56CFE1', gateType: 'single', symbol: null},
+  {name: 'U', color: '#64DFDF', gateType: 'single', symbol: null},
+  {name: 'not', color: '#72EFDD', gateType: 'multi', symbol: not},
+  {name: 'cnot', color: '#80FFDB', gateType: 'multi_tile', symbol: cnot}
 
 ]
 
@@ -168,7 +219,7 @@ tools.forEach(function(element){ // Build the toolbox
         hasBorders: false,
         selectable: false,
         hasControls: false
-      }), new fabric.Group(element.name)
+      }), new fabric.Group(element.symbol)
     ], 
       {
         ...no_drag_rect,
@@ -182,7 +233,7 @@ tools.forEach(function(element){ // Build the toolbox
   originalX = originalX + tileSize + tileSize/2;
 })
 originalX = 0; // variable re used to keep track of original tile poisitons later
-canvas.forEachObject(obj => console.log(obj))
+//canvas.forEachObject(obj => console.log(obj))
 //Create array to add in tiles automatically?
 
 //   _         _______    _______    _    _______     
@@ -251,7 +302,7 @@ canvas.on('mouse:over', function(options){ // Spawn new draggable instance of ga
       canvas.add(new fabric.Group(
         [
           new fabric.Rect(drag_rect), 
-          new fabric.Group(SearchToolSymbol(options.target._objects[0].fill), {
+          new fabric.Group(SearchToolSymbol(options.target.name), {
             originX: 'center',
             originY: 'center',
           })
@@ -263,24 +314,26 @@ canvas.on('mouse:over', function(options){ // Spawn new draggable instance of ga
 })
 
 canvas.on('mouse:down', function(options){ // Keep track of original tile position
-  try{
-    if (options.target.type == 'group' && options.target != gridGroup) {
-      originalX = options.target.left;
-      originalY = options.target.top;
-    }
-  }
-  catch(err){
-    // avoid error option type null error popping up in console
+  if (options.target && options.target != gridGroup) {
+    originalX = options.target.left;
+    originalY = options.target.top;
   }
 })
 
 canvas.on('object:moved', function(options){
+  if (options.target && options.target.gateType == 'multi_tile'){
+    let temp = options.target
+    if (options.target.name == 'cnot'){
+      temp = options.target
+      options.target = CreateCnot(options);
+      canvas.remove(temp)
+    }
+  }
   if (options.target.selectable && options.target.type != gridGroup) {
     if (options.target.left < width && (options.target.top > toolboxOffset) && (options.target.top < toolboxOffset + (gridSize * qubits))){
       options.target.set({ // Placing in the center of the grid tiles
-        left: (Math.round(options.target.left/gridSize) * gridSize) + Math.round((gridSize/2 - options.target.width/2)),
-        top: (Math.round((options.target.top - toolboxOffset)/gridSize)) * gridSize + toolboxOffset + Math.round(gridSize/2 - options.target.width/2),
-        //hasControls: true
+        left: (Math.floor(options.target.left/gridSize) * gridSize) + Math.round((gridSize/2 - options.target.width/2)),
+        top: (Math.floor((options.target.top - toolboxOffset)/gridSize)) * gridSize + toolboxOffset + Math.round(gridSize/2 - options.target.width/2),
       });
       CalculateIntersection(options);
     }
@@ -289,12 +342,13 @@ canvas.on('object:moved', function(options){
       canvas.remove(options.target);
     }
     else{
-      //SnapToPreviousPosition(options);
+      SnapToPreviousPosition(options);
     }
     options.target.setCoords();
     canvas.renderAll();
   }
 });
+
 
 
 function SnapToPreviousPosition(options){ // If tile is not placed in a permitted area, then put it back to where it came from
@@ -346,13 +400,14 @@ fabric.Object.prototype.intersectsWithVertPath = function(obj) {
 //function intersectsWithPath
 
 function DrawGrid(){ // Draw lines
-  /*for (var i = 0; i < qubits; i++){
+  for (var i = 0; i < qubits; i++){
     gridGroup.addWithUpdate(new fabric.Line(
         [ 0, (toolboxOffset) + (gridSize * i) + gridSize/2, width,  toolboxOffset + (gridSize * i) + gridSize/2], 
         { stroke: '#ccc', selectable: false }
       )); // x-axis
-  }*/
+  }
 
+  /*
   for (var i = 0; i <= qubits; i++){
     gridGroup.addWithUpdate(new fabric.Line(
         [ 0, (toolboxOffset) + (gridSize * i), width,  toolboxOffset + (gridSize) * i], 
@@ -366,7 +421,7 @@ function DrawGrid(){ // Draw lines
       [ gridSize * i , toolboxOffset, gridSize * i, toolboxOffset + (gridSize * qubits)], 
       { stroke: '#ccc', selectable: false }
       )); // y-axis
-  }
+  }*/
 
   canvas.add(gridGroup);
   canvas.sendToBack(gridGroup)
@@ -413,10 +468,10 @@ function SaveToSVG(){ // Creates SVG representation of circuit
   document.getElementById('link').href = objectURL;
 }
 
-function SearchToolSymbol(color){
+function SearchToolSymbol(name){
   console.log("going")
-  let obj = tools.find(o => o.color === color)
-  return obj.name;
+  let obj = tools.find(o => o.name === name)
+  return obj.symbol;
 }
 
 function CnotReset(options){
@@ -433,57 +488,57 @@ function CnotReset(options){
   options.target.line.path[1][2] = options.target.child.top;
 }
 
-const circleCross = [
-  new fabric.Circle(                  
-  {
-    radius: Math.round(tileSize/3),
-    originX: 'center', 
-    originY: 'center',
-    top: tileSize/4,
-    fill: 'transparent',
-    strokeWidth: Math.round(tileSize/12),
-    stroke: 'GREY',
-    name: 'circleCross'
-  }),
-  new fabric.Line([ 0, -tileSize/3, 0, tileSize/3], {
-    originX: 'center',
-    originY: 'center',
-    top: tileSize/4,
-    stroke: 'GREY'
-  }),
-  new fabric.Line([-tileSize/3, 0, tileSize/3, 0], {
-    originX: 'center',
-    originY: 'center',
-    top: tileSize/4,
-    stroke: 'GREY'
-  }),
-]
-
-const cnotCross = 
-{
-  top: 500,
-  left: 500,
-  hasControls: false,
-  selectable: true,
-  name: 'cnotCross',
-  child: null,
-  line: null,
-  hoverCursor: 'grab',
-  moveCursor: 'grabbing',
+function CdotReset(options){
+  options.target.set({left: options.target.parent.left + options.target.parent.width/2 - options.target.radius})
+  options.target.line.path[1][1] = options.target.left + options.target.radius;
+  options.target.line.path[1][2] = options.target.top;
 }
 
-canvas.add(new fabric.Group(
-  circleCross,
-  cnotCross
-))
+function CreateCnot(options){
+  //console.log(options)
+  canvas.add(new fabric.Group(
+    circleCross,
+    {...cnotCross, left: options.target.left, top: options.target.top}
+  ))
 
-let canvasObjects = canvas.getObjects()
-let topCir = canvasObjects[canvasObjects.length -1].top
-let leftCir = canvasObjects[canvasObjects.length -1].left
+  let canvasObjects = canvas.getObjects();  
+  canvas.add(new fabric.Circle(
+    {
+      ...cnotDot, 
+      left: canvasObjects[canvasObjects.length -1].left + ((canvasObjects[canvasObjects.length -1].width/2) - dotRadius ),
+      top: canvasObjects[canvasObjects.length -1].top + gridSize/1.5
+    })
+  )
+  
+  canvas.add(new fabric.Path('M 0 0 L 0 0', {stroke: 'grey', strokeWidth: lineStrokeWidth, objectCaching: false, parent: null, child: null}))
 
+  let tempCnotCross;
+  let tempDot;
+  let tempLine;
+  let tempCenter;
+  canvasObjects = canvas.getObjects();
+  tempCnotCross = canvasObjects[canvasObjects.length - 3];
+  tempDot = canvasObjects[canvasObjects.length - 2];
+  tempLine = canvasObjects[canvasObjects.length - 1];
+  tempCnotCross.child = tempDot;
+  tempDot.parent = tempCnotCross;
+  tempCnotCross.line = tempLine;
+  tempDot.line = tempLine;
+  tempLine.parent = tempCnotCross;
+  tempLine.child = tempDot;
+  tempCenter = tempCnotCross.getCenterPoint()
+  //console.log(tempCnotCross.getCenterPoint())
+  tempLine.path[0][1] = tempCenter.x;
+  tempLine.path[0][2] = tempCenter.y;
+  tempLine.path[1][1] = tempCenter.x;
+  tempLine.path[1][2] = tempDot.top;
+  tempLine.sendToBack()
+  return tempCnotCross;
+}
+
+
+/*
 const cnotDot = {
-  //originX: 'center',
-  //originY: 'center',
   dist: gridSize,
   left: canvasObjects[canvasObjects.length -1].left + ((canvasObjects[canvasObjects.length -1].width/2) - 5 ),
   top: canvasObjects[canvasObjects.length -1].top + gridSize/1.5,
@@ -495,7 +550,9 @@ const cnotDot = {
   parent: null,
   line: null,
   xAxis: null,
+  gateType: 'multi'
 }
+
 
 canvas.add(new fabric.Circle(cnotDot))
 
@@ -523,35 +580,26 @@ tempLine.path[0][1] = tempCenter.x;
 tempLine.path[0][2] = tempCenter.y;
 tempLine.path[1][1] = tempCenter.x;
 tempLine.path[1][2] = tempDot.top;
-/*tempLine.set({
-  x1: tempCenter.x ,
-  y1: tempCenter.y,
-  x2: tempCenter.x,
-  y2: tempDot.top
-})*/
 tempLine.sendToBack()
 
 
-console.log(canvas.getObjects())
+console.log(canvas.getObjects())*/
 
 canvas.on('object:moving', function(options){ // Makes multi gates behave when dragged, 
                                               // SHOULD REALLY LOOK AT MAKING ORIGINS AROUND X TO AVOID CALCULATIONS
   if (options.target && options.target.name == 'cnotDot'){
-    options.target.set({left: options.target.parent.left + options.target.parent.width/2 - options.target.radius})
-    options.target.line.path[1][1] = options.target.left + options.target.radius;
-    options.target.line.path[1][2] = options.target.top;
-    /*options.target.line.set({
-      x2: options.target.left + options.target.radius,
-      y2: options.target.top
-    })*/
+    CdotReset(options)
   }
   if (options.target && options.target.name == 'cnotCross'){
     CnotReset(options);
   }
 })
 
-canvas.on('mouse:up', function(options){
+canvas.on('object:moved', function(options){
   if (options.target && options.target.name == 'cnotCross'){
     CnotReset(options);
+  }
+  if (options.target && options.target.name == 'cnotDot'){
+    CdotReset(options)
   }
 })
