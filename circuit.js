@@ -9,6 +9,19 @@ const grid = 25;
 const gridSize = width/grid;
 const tileSize = gridSize * 0.7;
 const toolboxOffset = width/5;
+const distMulti = gridSize;
+const lineStrokeWidth = 1;
+const dotRadius = 5;
+
+const no_drag_rect = 
+  {
+    top: 0,
+    selectable: true,
+    hasBorders: false,
+    selectable: false,
+    hoverCursor: 'default',
+    hasControls: false,
+  }
 
 const drag_rec = {
   selectable: true,
@@ -44,7 +57,7 @@ const cnot = [
     radius: tileSize/6,
     originX: 'center', 
     originY: 'center',
-    top: tileSize/4,
+    top: -tileSize/4,
     fill: 'transparent',
     strokeWidth: tileSize/12,
     stroke: 'GREY'
@@ -52,13 +65,13 @@ const cnot = [
   new fabric.Line([ 0, -tileSize/6, 0, tileSize/6], {
     originX: 'center',
     originY: 'center',
-    top: tileSize/4,
+    top: -tileSize/4,
     stroke: 'GREY'
   }),
   new fabric.Line([-tileSize/6, 0, tileSize/6, 0], {
     originX: 'center',
     originY: 'center',
-    top: tileSize/4,
+    top: -tileSize/4,
     stroke: 'GREY'
   }),
   new fabric.Line([0,-tileSize/5, 0, tileSize/6], {
@@ -69,30 +82,81 @@ const cnot = [
   new fabric.Line([ 0, -tileSize/6, 0, tileSize/6], {
     originX: 'center',
     originY: 'center',
-    top: -tileSize/4,
+    top: tileSize/4,
     stroke: 'GREY',
     angle: 45
   }),
   new fabric.Line([-tileSize/6, 0, tileSize/6, 0], {
     originX: 'center',
     originY: 'center',
-    top: -tileSize/4,
+    top: tileSize/4,
     stroke: 'GREY',
     angle: 45
   })
 ]
 
+const circleCross = [
+  new fabric.Circle(                  
+  {
+    radius: Math.round(tileSize/3),
+    originX: 'center', 
+    originY: 'center',
+    top: tileSize/4,
+    fill: 'transparent',
+    strokeWidth: Math.round(tileSize/12),
+    stroke: 'GREY',
+    name: 'circleCross'
+  }),
+  new fabric.Line([ 0, -tileSize/3, 0, tileSize/3], {
+    originX: 'center',
+    originY: 'center',
+    top: tileSize/4,
+    stroke: 'GREY'
+  }),
+  new fabric.Line([-tileSize/3, 0, tileSize/3, 0], {
+    originX: 'center',
+    originY: 'center',
+    top: tileSize/4,
+    stroke: 'GREY'
+  }),
+]
+
+const cnotCross = 
+{
+  hasControls: false,
+  selectable: true,
+  name: 'cnotCross',
+  child: null,
+  line: null,
+  hoverCursor: 'grab',
+  moveCursor: 'grabbing',
+  gateType: 'multi_tile'
+}
+
+const cnotDot = {
+  dist: gridSize,
+  radius: dotRadius,
+  hasControls: false,
+  hoverCursor: 'grab',
+  moveCursor: 'grabbing',
+  name: 'cnotDot',
+  parent: null,
+  line: null,
+  xAxis: null,
+  gateType: 'multi_tile'
+}
+
 const tools = [
-  {name: 'H', color: '#7400B8'},
-  {name: 'I', color: '#6930C3'},
-  {name: 'T', color: '#5E60CE'},
-  {name: 'S', color: '#5390D9'},
-  {name: 'Z', color: '#4EA8DE'},
-  {name: 'P', color: '#48BFE3'},
-  {name: 'Y', color: '#56CFE1'},
-  {name: 'U', color: '#64DFDF'},
-  {name: not, color: '#72EFDD'},
-  {name: cnot, color: '#80FFDB'}
+  {name: 'H', color: '#7400B8', gateType: 'single', symbol: null},
+  {name: 'I', color: '#6930C3', gateType: 'single', symbol: null},
+  {name: 'T', color: '#5E60CE', gateType: 'single', symbol: null},
+  {name: 'S', color: '#5390D9', gateType: 'single', symbol: null},
+  {name: 'Z', color: '#4EA8DE', gateType: 'single', symbol: null},
+  {name: 'P', color: '#48BFE3', gateType: 'single', symbol: null},
+  {name: 'Y', color: '#56CFE1', gateType: 'single', symbol: null},
+  {name: 'U', color: '#64DFDF', gateType: 'single', symbol: null},
+  {name: 'not', color: '#72EFDD', gateType: 'multi', symbol: not},
+  {name: 'cnot', color: '#80FFDB', gateType: 'multi_tile', symbol: cnot}
 
 ]
 
@@ -119,7 +183,7 @@ let textField = {
 DrawGrid();
 
 tools.forEach(function(element){ // Build the toolbox
-  if (typeof element.name === 'string'){
+  if (element.gateType == 'single'){
     canvas.add(new fabric.Group(
       [new fabric.Rect({
         width: tileSize, 
@@ -134,13 +198,10 @@ tools.forEach(function(element){ // Build the toolbox
       }), new fabric.Text(element.name, textField)
     ], 
       {
+        ...no_drag_rect,
         left: originalX, 
-        top: 0,
-        selectable: true,
-        hasBorders: false,
-        selectable: false,
-        hoverCursor: 'default',
-        hasControls: false
+        name: element.name,
+        gateType: element.gateType
       }
     ))
   }
@@ -159,36 +220,21 @@ tools.forEach(function(element){ // Build the toolbox
         hasBorders: false,
         selectable: false,
         hasControls: false
-      }), new fabric.Group(element.name)
+      }), new fabric.Group(element.symbol)
     ], 
       {
+        ...no_drag_rect,
         left: originalX, 
-        top: 0,
-        selectable: true,
-        hasBorders: false,
-        selectable: false,
-        hoverCursor: 'default',
-        hasControls: false
+        name: element.name,
+        gateType: element.gateType
       }
     ))
     //canvas.forEachObject(obj => console.log(obj))
   }
   originalX = originalX + tileSize + tileSize/2;
 })
-originalX = 0;
-canvas.forEachObject(obj => console.log(obj))
-/*
-var no_drag_rect_H = new fabric.Group(
-  [new fabric.Rect(no_drag_H), new fabric.Text('H', textField)], 
-  {left: 0, top: 0}
-)
-
-var no_drag_rect_I = new fabric.Group(
-  [new fabric.Rect(no_drag_I), new fabric.Text('I', textField)], 
-  {left: 0 + tileSize + tileSize/2, top: 0}
-);
-*/
-
+originalX = 0; // variable re used to keep track of original tile poisitons later
+//canvas.forEachObject(obj => console.log(obj))
 //Create array to add in tiles automatically?
 
 //   _         _______    _______    _    _______     
@@ -219,110 +265,160 @@ gridGroup.on('mousedown', function(){ // Make sure grid is always at the back
 })
 
 canvas.on('mouse:over', function(options){ // Spawn new draggable instance of gate when hovering over said gate tile in toolbox
-  try{
-    if (options.target != gridGroup && !options.target._objects[0].selectable){
-      let drag_rect = {
-        width: tileSize, 
-        height: tileSize, 
-        fill: options.target._objects[0].fill, 
-        originX: 'center', 
-        originY: 'center',
-        selectable: true,
-        centeredRotation: true,
-        hasBorders: true,
-        hasControls: false
-      }
-      let drag_group =  { left: options.target.left, 
-            top: options.target.top, 
-            selectable: true,
-            hasControls: false,
-            hoverCursor: 'grab',
-            moveCursor: 'grabbing',
-          }
-      if (options.target._objects[1].type == 'text'){
-        canvas.add(new fabric.Group(
-          [
-            new fabric.Rect(drag_rect), 
-            new fabric.Text(options.target._objects[1].text, textField)
-          ], 
-          drag_group
-        ));
-      }
-      else{
-        canvas.add(new fabric.Group(
-          [
-            new fabric.Rect(drag_rect), 
-            new fabric.Group(SearchToolSymbol(options.target._objects[0].fill), {
-              originX: 'center',
-              originY: 'center',
-            })
-          ], 
-          drag_group
-        ));
-      }
+  if (options.target && options.target != gridGroup && !options.target.selectable){
+    let drag_rect = 
+    {
+      width: tileSize, 
+      height: tileSize, 
+      fill: options.target._objects[0].fill, 
+      originX: 'center', 
+      originY: 'center',
     }
-  }
-  catch(err){
-    console.log(err)
-    // nothing lmao
+    let drag_group =  
+    { 
+      left: options.target.left, 
+      top: options.target.top, 
+      name: options.target.name, 
+      gateType: options.target.gateType,
+      hasControls: false,
+      hoverCursor: 'grab',
+      moveCursor: 'grabbing',
+    }
+
+    if (options.target._objects[1].type == 'text'){
+      /*canvas.add(new fabric.Group(
+        [
+          new fabric.Rect(drag_rect), 
+          new fabric.Text(options.target._objects[1].text, textField)
+        ], 
+        drag_group
+      ));*/
+      options.target.clone(function(clone){
+        clone.set(drag_group);
+        canvas.add(clone);
+        console.log(canvas.getObjects())
+      });
+    }
+    else{
+      canvas.add(new fabric.Group(
+        [
+          new fabric.Rect(drag_rect), 
+          new fabric.Group(SearchToolSymbol(options.target.name), {
+            originX: 'center',
+            originY: 'center',
+          })
+        ], 
+        drag_group
+      ));
+    }
   }
 })
 
 canvas.on('mouse:down', function(options){ // Keep track of original tile position
-  try{
-    if (options.target.type == 'group' && options.target != gridGroup) {
-      originalX = options.target.left;
-      originalY = options.target.top;
-    }
-  }
-  catch(err){
-    // avoid error option type null error popping up in console
+  if (options.target && options.target != gridGroup) {
+    originalX = options.target.left;
+    originalY = options.target.top;
   }
 })
 
 canvas.on('object:moved', function(options){
-  if (options.target.type == 'group' && options.target.type != gridGroup) {
+  if (options.target && options.target.gateType == 'multi_tile'){
+    let temp = options.target
+    if (options.target.name == 'cnot'){
+      temp = options.target;
+      options.target = CreateCnot(options);
+      canvas.remove(temp)
+    }
+  }
+  if (options.target.selectable && options.target.type != gridGroup) {
     if (options.target.left < width && (options.target.top > toolboxOffset) && (options.target.top < toolboxOffset + (gridSize * qubits))){
       options.target.set({ // Placing in the center of the grid tiles
-        left: Math.round(options.target.left / gridSize) * gridSize + (gridSize * (1 - (tileSize/gridSize)))/2,
-        top: Math.round(options.target.top / gridSize) * gridSize + (gridSize * (1 - (tileSize/gridSize)))/2,
-        hasControls: true
+        left: (Math.floor(options.target.left/gridSize) * gridSize) + Math.round((gridSize/2 - options.target.width/2)),
+        top: (Math.floor((options.target.top - toolboxOffset)/gridSize)) * gridSize + toolboxOffset + Math.round(gridSize/2 - options.target.width/2),
       });
       CalculateIntersection(options);
     }
     else if (options.target.top < toolboxOffset) {
       console.log("removing")
+      if (options.target.gateType == 'multi_tile'){
+        canvas.remove(options.target.child);
+        canvas.remove(options.target.line);
+      }
       canvas.remove(options.target);
     }
     else{
       SnapToPreviousPosition(options);
     }
-    canvas.renderAll();
-    options.target.set('hasControls', false) // Reveal and unreveal hasControls to keep interactivity bug free please
-    //options.target.set('fill', 'green');
+    options.target.setCoords();
     canvas.renderAll();
   }
-  //console.log(canvas.getObjects())
 });
+
+canvas.on('object:moving', function(options){ // Makes multi gates behave when dragged, 
+  // SHOULD REALLY LOOK AT MAKING ORIGINS AROUND X TO AVOID CALCULATIONS
+if (options.target && options.target.name == 'cnotDot'){
+    CdotReset(options)
+  }
+  if (options.target && options.target.name == 'cnotCross'){
+    CnotReset(options);
+  }
+});
+
+canvas.on('object:moved', function(options){
+  if (options.target && options.target.name == 'cnotCross'){
+    CnotReset(options);
+  }
+  if (options.target && options.target.name == 'cnotDot'){
+    CdotReset(options);
+  }
+});
+
+
 
 function SnapToPreviousPosition(options){ // If tile is not placed in a permitted area, then put it back to where it came from
   console.log("back to where you belong")
   options.target.set({
     left: originalX,
     top: originalY,
-    hasControls: true
   });
+  options.target.setCoords()
 }
 
 function CalculateIntersection(options){ // Determine if tile is being moved into grid with already exiting tile
-  options.target.setCoords();
   canvas.forEachObject(function(obj) {
-    if (obj === options.target) return;
+    if (obj === options.target) {
+      return;
+    }
+    if (((obj.type == 'path' && obj.parent != options.target) && (obj.type == 'path' && obj.child != options.target))){
+      if (options.target.intersectsWithVertPath(obj)){
+        SnapToPreviousPosition(options)
+        return;
+      }
+    }
     if (options.target.intersectsWithObject(obj) && obj != gridGroup) {
-      snapped = true
       SnapToPreviousPosition(options)
+      return;
     }
   });
+}
+
+fabric.Object.prototype.intersectsWithVertPath = function(obj) { //checks if object intersects with vertical path from multi line gates 
+  let topLeft;
+  let bottomRight;
+  if (obj.path[0][2] > obj.path[1][2]){
+    topLeft = new fabric.Point(obj.path[0][1] - lineStrokeWidth/2, obj.path[0][2])
+    bottomRight = new fabric.Point(obj.path[1][1] + lineStrokeWidth/2, obj.path[1][2])
+  }
+  if (obj.path[0][2] < obj.path[1][2]){
+    topLeft = new fabric.Point(obj.path[1][1] - lineStrokeWidth/2, obj.path[1][2])
+    bottomRight = new fabric.Point(obj.path[0][1] + lineStrokeWidth/2, obj.path[0][2])
+  }
+  if (obj.path[0][2] == obj.path[1][2]){
+    return false;
+  }
+  console.log(topLeft)
+  console.log(bottomRight)
+  return (this.intersectsWithRect(topLeft, bottomRight))
 }
 
 function DrawGrid(){ // Draw lines
@@ -333,14 +429,15 @@ function DrawGrid(){ // Draw lines
       )); // x-axis
   }
 
-  /*for (var i = 0; i <= qubits; i++){
+  /*
+  for (var i = 0; i <= qubits; i++){
     gridGroup.addWithUpdate(new fabric.Line(
         [ 0, (toolboxOffset) + (gridSize * i), width,  toolboxOffset + (gridSize) * i], 
         { stroke: '#ccc', selectable: false }
       )); // x-axis
-  }*/
+  }
   
-  /*
+  
   for (var i = 0; i < (gridSize); i++) {
     gridGroup.addWithUpdate(new fabric.Line(
       [ gridSize * i , toolboxOffset, gridSize * i, toolboxOffset + (gridSize * qubits)], 
@@ -393,157 +490,69 @@ function SaveToSVG(){ // Creates SVG representation of circuit
   document.getElementById('link').href = objectURL;
 }
 
-function SearchToolSymbol(color){
+function SearchToolSymbol(name){
   console.log("going")
-  let obj = tools.find(o => o.color === color)
-  return obj.name;
+  let obj = tools.find(o => o.name === name)
+  return obj.symbol;
 }
 
-
-/*
-const circleCross = [
-  new fabric.Circle(                  
-  {
-    radius: tileSize/3,
-    originX: 'center', 
-    originY: 'center',
-    top: tileSize/4,
-    fill: 'transparent',
-    strokeWidth: tileSize/12,
-    stroke: 'GREY',
-    name: 'circleCross'
-  }),
-  new fabric.Line([ 0, -tileSize/3, 0, tileSize/3], {
-    originX: 'center',
-    originY: 'center',
-    top: tileSize/4,
-    stroke: 'GREY'
-  }),
-  new fabric.Line([-tileSize/3, 0, tileSize/3, 0], {
-    originX: 'center',
-    originY: 'center',
-    top: tileSize/4,
-    stroke: 'GREY'
-  }),
-]
-
-const cnotCross = 
-{
-  top: 500,
-  left: 500,
-  hasControls: false,
-  selectable: true,
-  name: 'cnotCross'
-}
-
-canvas.add(new fabric.Group(
-  circleCross,
-  cnotCross
-))
-
-const canvasObjects = canvas.getObjects()
-let topCir = canvasObjects[canvasObjects.length -1].top
-let leftCir = canvasObjects[canvasObjects.length -1].left
-console.log(canvasObjects[canvasObjects.length -1].top)
-console.log(canvasObjects[canvasObjects.length -1].left + canvasObjects[canvasObjects.length -1]._objects[0].radius/2)
-console.log(canvasObjects)
-
-canvas.add(new fabric.Path(`M ${leftCir + canvasObjects[canvasObjects.length -1]._objects[0].radius} ${topCir} V ${topCir - 50}`, {stroke: 'grey', objectCaching: false}))
-
-console.log(canvasObjects)
-
-const cnotDot = {
-  originX: 'center',
-  top: topCir - 50,
-  left: leftCir + tileSize/3,
-  radius: 5,
-  hasControls: false,
-  name: 'cnotDot'
-}
-
-
-canvas.add(new fabric.Circle(cnotDot))
-
-
-var xAxis;
-canvas.on("mouse:over", function(options){
-  if (options.target && options.target.name == 'cnotCross'){
-    console.log("over")
-    let theArray = canvas.getObjects()
-    let theFind = theArray.findIndex(element => element === options.target)
-    let one = (canvas.item(theFind))
-    one.clone()
-    let two = canvas.item(theFind + 1)
-    two.clone();
-    canvas.remove(theFind - 1)
-    let three = canvas.item(theFind + 2)
-    three.clone()
-    canvas.remove(canvas.item(theFind))
-    canvas.remove(canvas.item(theFind))
-    canvas.remove(canvas.item(theFind))
-    canvas.add(new fabric.Group([
-      one, two, three
-    ],
+function CnotReset(options){
+  options.target.child.set(
     {
-      hasControls: false,
-      name: 'cnot'
-    })
-    )
-    canvas.renderAll()
-    console.log(canvas.getObjects())
-  }
-  //console.log(options.target)
-  //console.log(cnotDot)
-  if (options.target && options.target.type == 'circle' && options.target.name == 'cnotDot'){
-    xAxis = options.target.left
-  }
-})
-
-canvas.on("mouse:out", function(options){
-  if (options.target && options.target.type == 'group' && options.target.name == 'cnot'){
-    options.target._objects[0].clone(function(clonedObj){
-      clonedObj.set(cnotCross)
-      clonedObj.set({left: options.target.left, top: options.target.top + (options.target.height - clonedObj.height)})
-      console.log(clonedObj)
-      canvas.add(clonedObj)
-      //canvas.remove(options.target)
-    })
-    options.target._objects[1].clone(function(clonedObj){
-      clonedObj.set(
-        {
-        left: options.target.left + (options.target.width/2), 
-        top: options.target.top + (options.target._objects[0].height/2),
-        objectCaching: false
-      }
-        )
-      canvas.add(clonedObj)
-      //canvas.remove(options.target)
-    })
-    options.target._objects[2].clone(function(clonedObj){
-      clonedObj.set(cnotDot)
-      clonedObj.set({left: options.target.left + (options.target.width/2), top: options.target.top})
-      canvas.add(clonedObj)
-      //canvas.remove(options.target)
-    })
-    canvas.remove(options.target)
-  }
-})
-
-
-canvas.on("object:moving", function(options){
-  if (options.target.type == 'circle' && options.target.name == 'cnotDot'){
-    //console.log("mouse up in this")
-    let theArray = canvas.getObjects()
-    let theFind = theArray.findIndex(element => element === options.target)
-    if (options.target.left != xAxis){
-      options.target.set({left: xAxis})
+      left: options.target.left + options.target.width/2 - options.target.child.width/2, 
+      top: options.target.top + gridSize/1.5
     }
-    canvas.item(theFind - 1).path[1][2] = canvas.item(theFind).top
-    //canvas.item(theFind-1).x1 = canvas.item(theFind).left 
-    //canvas.item(theFind-1).y1 = canvas.item(theFind).top
-    //console.log(canvas.item(theFind - 1).x1)
-    canvas.renderAll()
-  }
-})
+  );
+  options.target.child.setCoords();
+  options.target.line.path[0][1] = options.target.left + options.target.width/2;
+  options.target.line.path[0][2] = options.target.top + options.target.width/2;
+  options.target.line.path[1][1] = options.target.child.left + options.target.child.radius;
+  options.target.line.path[1][2] = options.target.child.top;
+}
 
-console.log(canvas.getObjects())*/
+function CdotReset(options){
+  options.target.set({left: options.target.parent.left + options.target.parent.width/2 - options.target.radius})
+  options.target.line.path[1][1] = options.target.left + options.target.radius;
+  options.target.line.path[1][2] = options.target.top;
+}
+
+function CreateCnot(options){
+  canvas.add(new fabric.Group(
+    circleCross,
+    {...cnotCross, left: options.target.left, top: options.target.top}
+  ))
+  
+  let canvasObjects = canvas.getObjects();
+
+  canvas.add(new fabric.Circle(
+    {
+      ...cnotDot, 
+      left: canvasObjects[canvasObjects.length -1].left + ((canvasObjects[canvasObjects.length -1].width/2) - dotRadius ),
+      top: canvasObjects[canvasObjects.length -1].top + gridSize/1.5
+    })
+  )
+
+  canvas.add(new fabric.Path('M 0 0 L 0 0', {stroke: 'grey', strokeWidth: lineStrokeWidth, objectCaching: false, parent: null, child: null}))
+  let tempCnotCross;
+  let tempDot;
+  let tempLine;
+  let tempCenter;
+  canvasObjects = canvas.getObjects();
+  tempCnotCross = canvasObjects[canvasObjects.length - 3];
+  tempDot = canvasObjects[canvasObjects.length - 2];
+  tempLine = canvasObjects[canvasObjects.length - 1];
+  tempCnotCross.child = tempDot;
+  tempDot.parent = tempCnotCross;
+  tempCnotCross.line = tempLine;
+  tempDot.line = tempLine;
+  tempLine.parent = tempCnotCross;
+  tempLine.child = tempDot;
+  tempCenter = tempCnotCross.getCenterPoint()
+  tempLine.path[0][1] = tempCenter.x;
+  tempLine.path[0][2] = tempCenter.y;
+  tempLine.path[1][1] = tempCenter.x;
+  tempLine.path[1][2] = tempDot.top;
+  tempLine.sendToBack()
+  return tempCnotCross;
+}
+
