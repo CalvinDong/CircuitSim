@@ -57,7 +57,7 @@ const cnot = [
     radius: tileSize/6,
     originX: 'center', 
     originY: 'center',
-    top: tileSize/4,
+    top: -tileSize/4,
     fill: 'transparent',
     strokeWidth: tileSize/12,
     stroke: 'GREY'
@@ -65,13 +65,13 @@ const cnot = [
   new fabric.Line([ 0, -tileSize/6, 0, tileSize/6], {
     originX: 'center',
     originY: 'center',
-    top: tileSize/4,
+    top: -tileSize/4,
     stroke: 'GREY'
   }),
   new fabric.Line([-tileSize/6, 0, tileSize/6, 0], {
     originX: 'center',
     originY: 'center',
-    top: tileSize/4,
+    top: -tileSize/4,
     stroke: 'GREY'
   }),
   new fabric.Line([0,-tileSize/5, 0, tileSize/6], {
@@ -82,14 +82,14 @@ const cnot = [
   new fabric.Line([ 0, -tileSize/6, 0, tileSize/6], {
     originX: 'center',
     originY: 'center',
-    top: -tileSize/4,
+    top: tileSize/4,
     stroke: 'GREY',
     angle: 45
   }),
   new fabric.Line([-tileSize/6, 0, tileSize/6, 0], {
     originX: 'center',
     originY: 'center',
-    top: -tileSize/4,
+    top: tileSize/4,
     stroke: 'GREY',
     angle: 45
   })
@@ -130,6 +130,7 @@ const cnotCross =
   line: null,
   hoverCursor: 'grab',
   moveCursor: 'grabbing',
+  gateType: 'multi_tile'
 }
 
 const cnotDot = {
@@ -142,7 +143,7 @@ const cnotDot = {
   parent: null,
   line: null,
   xAxis: null,
-  gateType: 'multi'
+  gateType: 'multi_tile'
 }
 
 const tools = [
@@ -324,7 +325,7 @@ canvas.on('object:moved', function(options){
   if (options.target && options.target.gateType == 'multi_tile'){
     let temp = options.target
     if (options.target.name == 'cnot'){
-      temp = options.target
+      temp = options.target;
       options.target = CreateCnot(options);
       canvas.remove(temp)
     }
@@ -339,6 +340,10 @@ canvas.on('object:moved', function(options){
     }
     else if (options.target.top < toolboxOffset) {
       console.log("removing")
+      if (options.target.gateType == 'multi_tile'){
+        canvas.remove(options.target.child);
+        canvas.remove(options.target.line);
+      }
       canvas.remove(options.target);
     }
     else{
@@ -346,6 +351,25 @@ canvas.on('object:moved', function(options){
     }
     options.target.setCoords();
     canvas.renderAll();
+  }
+});
+
+canvas.on('object:moving', function(options){ // Makes multi gates behave when dragged, 
+  // SHOULD REALLY LOOK AT MAKING ORIGINS AROUND X TO AVOID CALCULATIONS
+if (options.target && options.target.name == 'cnotDot'){
+    CdotReset(options)
+  }
+  if (options.target && options.target.name == 'cnotCross'){
+    CnotReset(options);
+  }
+});
+
+canvas.on('object:moved', function(options){
+  if (options.target && options.target.name == 'cnotCross'){
+    CnotReset(options);
+  }
+  if (options.target && options.target.name == 'cnotDot'){
+    CdotReset(options);
   }
 });
 
@@ -378,7 +402,7 @@ function CalculateIntersection(options){ // Determine if tile is being moved int
   });
 }
 
-fabric.Object.prototype.intersectsWithVertPath = function(obj) {
+fabric.Object.prototype.intersectsWithVertPath = function(obj) { //checks if object intersects with vertical path from multi line gates 
   let topLeft;
   let bottomRight;
   if (obj.path[0][2] > obj.path[1][2]){
@@ -396,8 +420,6 @@ fabric.Object.prototype.intersectsWithVertPath = function(obj) {
   console.log(bottomRight)
   return (this.intersectsWithRect(topLeft, bottomRight))
 }
-
-//function intersectsWithPath
 
 function DrawGrid(){ // Draw lines
   for (var i = 0; i < qubits; i++){
@@ -495,13 +517,13 @@ function CdotReset(options){
 }
 
 function CreateCnot(options){
-  //console.log(options)
   canvas.add(new fabric.Group(
     circleCross,
     {...cnotCross, left: options.target.left, top: options.target.top}
   ))
+  
+  let canvasObjects = canvas.getObjects();
 
-  let canvasObjects = canvas.getObjects();  
   canvas.add(new fabric.Circle(
     {
       ...cnotDot, 
@@ -509,9 +531,8 @@ function CreateCnot(options){
       top: canvasObjects[canvasObjects.length -1].top + gridSize/1.5
     })
   )
-  
-  canvas.add(new fabric.Path('M 0 0 L 0 0', {stroke: 'grey', strokeWidth: lineStrokeWidth, objectCaching: false, parent: null, child: null}))
 
+  canvas.add(new fabric.Path('M 0 0 L 0 0', {stroke: 'grey', strokeWidth: lineStrokeWidth, objectCaching: false, parent: null, child: null}))
   let tempCnotCross;
   let tempDot;
   let tempLine;
@@ -527,7 +548,6 @@ function CreateCnot(options){
   tempLine.parent = tempCnotCross;
   tempLine.child = tempDot;
   tempCenter = tempCnotCross.getCenterPoint()
-  //console.log(tempCnotCross.getCenterPoint())
   tempLine.path[0][1] = tempCenter.x;
   tempLine.path[0][2] = tempCenter.y;
   tempLine.path[1][1] = tempCenter.x;
@@ -536,70 +556,3 @@ function CreateCnot(options){
   return tempCnotCross;
 }
 
-
-/*
-const cnotDot = {
-  dist: gridSize,
-  left: canvasObjects[canvasObjects.length -1].left + ((canvasObjects[canvasObjects.length -1].width/2) - 5 ),
-  top: canvasObjects[canvasObjects.length -1].top + gridSize/1.5,
-  radius: 5,
-  hasControls: false,
-  hoverCursor: 'grab',
-  moveCursor: 'grabbing',
-  name: 'cnotDot',
-  parent: null,
-  line: null,
-  xAxis: null,
-  gateType: 'multi'
-}
-
-
-canvas.add(new fabric.Circle(cnotDot))
-
-canvas.add(new fabric.Path('M 0 0 L 0 0', {stroke: 'grey', strokeWidth: lineStrokeWidth, objectCaching: false, parent: null, child: null}))
-
-//canvas.add(new fabric.Line([0,0,0,0], {stroke: 'grey', objectCaching: false}))
-
-let tempCnotCross;
-let tempDot;
-let tempLine;
-let tempCenter;
-canvasObjects = canvas.getObjects();
-tempCnotCross = canvasObjects[canvasObjects.length - 3];
-tempDot = canvasObjects[canvasObjects.length - 2];
-tempLine = canvasObjects[canvasObjects.length - 1];
-tempCnotCross.child = tempDot;
-tempDot.parent = tempCnotCross;
-tempCnotCross.line = tempLine;
-tempDot.line = tempLine;
-tempLine.parent = tempCnotCross;
-tempLine.child = tempDot;
-tempCenter = tempCnotCross.getCenterPoint()
-console.log(tempCnotCross.getCenterPoint())
-tempLine.path[0][1] = tempCenter.x;
-tempLine.path[0][2] = tempCenter.y;
-tempLine.path[1][1] = tempCenter.x;
-tempLine.path[1][2] = tempDot.top;
-tempLine.sendToBack()
-
-
-console.log(canvas.getObjects())*/
-
-canvas.on('object:moving', function(options){ // Makes multi gates behave when dragged, 
-                                              // SHOULD REALLY LOOK AT MAKING ORIGINS AROUND X TO AVOID CALCULATIONS
-  if (options.target && options.target.name == 'cnotDot'){
-    CdotReset(options)
-  }
-  if (options.target && options.target.name == 'cnotCross'){
-    CnotReset(options);
-  }
-})
-
-canvas.on('object:moved', function(options){
-  if (options.target && options.target.name == 'cnotCross'){
-    CnotReset(options);
-  }
-  if (options.target && options.target.name == 'cnotDot'){
-    CdotReset(options)
-  }
-})
