@@ -413,6 +413,7 @@ canvas.on('object:moved', function(options){
     CnotReset(options);
   }
   if (options.target && options.target.name == 'cnotDot'){
+    console.log("eh")
     CdotReset(options);
   }
 });
@@ -553,6 +554,20 @@ function CnotReset(options){
   options.target.line.path[0][2] = options.target.top + options.target.width/2;
   options.target.line.path[1][1] = options.target.child.left + options.target.child.radius;
   options.target.line.path[1][2] = options.target.child.top;
+  if (options.target.child2){ // For toffoli gate
+    options.target.child.set('top',options.target.top + gridSize)
+    options.target.child2.set(
+      {
+        left: options.target.left + options.target.width/2 - options.target.child2.width/2, 
+        top: options.target.top + gridSize + gridSize/1.5
+      }
+    );
+    options.target.child2.setCoords();
+    options.target.line2.path[0][1] = options.target.left + options.target.width/2;
+    options.target.line2.path[0][2] = options.target.top + options.target.width/2;
+    options.target.line2.path[1][1] = options.target.child2.left + options.target.child2.radius;
+    options.target.line2.path[1][2] = options.target.child2.top;
+  }
 }
 
 function CdotReset(options){
@@ -620,8 +635,7 @@ function CdotReset(options){
   options.target.line.path[1][1] = options.target.left + options.target.radius;
   options.target.line.path[1][2] = options.target.top;
 }
-
-/*function CreateCnot(options){
+function CreateCnot(options){
   canvas.add(new fabric.Group(
     circleCross,
     {...cnotCross, left: options.target.left, top: options.target.top}
@@ -637,32 +651,19 @@ function CdotReset(options){
     })
   )
 
-  canvas.add(new fabric.Circle(
-    {
-      ...cnotDot, 
-      left: canvasObjects[canvasObjects.length -1].left + ((canvasObjects[canvasObjects.length -1].width/2) - dotRadius ),
-      top: canvasObjects[canvasObjects.length -1].top + gridSize/1.25
-    })
-  )
-
   canvas.add(new fabric.Path('M 0 0 L 0 0', {stroke: 'grey', strokeWidth: lineStrokeWidth, objectCaching: false, parent: null, child: null}))
   let tempCnotCross;
   let tempDot;
-  let tempDot2;
   let tempLine;
   let tempCenter;
   canvasObjects = canvas.getObjects();
-  tempCnotCross = canvasObjects[canvasObjects.length - 4];
-  tempDot1 = canvasObjects[canvasObjects.length - 3];
-  tempDot2 = canvasObjects[canvasObjects.length - 2];
+  tempCnotCross = canvasObjects[canvasObjects.length - 3];
+  tempDot = canvasObjects[canvasObjects.length - 2];
   tempLine = canvasObjects[canvasObjects.length - 1];
   tempCnotCross.child = tempDot;
-  tempCnotCross.child2 = tempDot2;
-  tempDot1.parent = tempCnotCross;
-  tempDot2.parent = tempCnotCross;
+  tempDot.parent = tempCnotCross;
   tempCnotCross.line = tempLine;
   tempDot.line = tempLine;
-  tempDot2.line = tempLine;
   tempLine.parent = tempCnotCross;
   tempLine.child = tempDot;
   tempCenter = tempCnotCross.getCenterPoint()
@@ -672,11 +673,11 @@ function CdotReset(options){
   tempLine.path[1][2] = tempDot.top;
   tempLine.sendToBack()
   return tempCnotCross;
-}*/
+}
 
 canvas.add(new fabric.Group(
   circleCross,
-  {...cnotCross, left: 500, top: 500}
+  {...cnotCross, left: 500, top: 500, tempLine2: null}
 ))
 
 let canvasObjects = canvas.getObjects();
@@ -698,29 +699,39 @@ canvas.add(new fabric.Circle(
 )
 
 canvas.add(new fabric.Path('M 0 0 L 0 0', {stroke: 'grey', strokeWidth: lineStrokeWidth, objectCaching: false, parent: null, child: null}))
+canvas.add(new fabric.Path('M 0 0 L 0 0', {stroke: 'grey', strokeWidth: lineStrokeWidth, objectCaching: false, parent: null, child: null}))
 let tempCnotCross;
 let tempDot;
 let tempDot2;
 let tempLine;
+let tempLine2;
 let tempCenter;
 canvasObjects = canvas.getObjects();
 console.log(canvasObjects = canvas.getObjects())
-tempCnotCross = canvasObjects[canvasObjects.length - 4];
-tempDot = canvasObjects[canvasObjects.length - 3];
-tempDot2 = canvasObjects[canvasObjects.length - 2];
-tempLine = canvasObjects[canvasObjects.length - 1];
+tempCnotCross = canvasObjects[canvasObjects.length - 5];
+tempDot = canvasObjects[canvasObjects.length - 4];
+tempDot2 = canvasObjects[canvasObjects.length - 3];
+tempLine = canvasObjects[canvasObjects.length - 2];
+tempLine2 = canvasObjects[canvasObjects.length - 1];
 tempCnotCross.child = tempDot;
 tempCnotCross.child2 = tempDot2;
 tempDot.parent = tempCnotCross;
 tempDot2.parent = tempCnotCross;
 tempCnotCross.line = tempLine;
+tempCnotCross.line2 = tempLine2;
 tempDot.line = tempLine;
-tempDot2.line = tempLine;
+tempDot2.line = tempLine2;
 tempLine.parent = tempCnotCross;
-tempLine.child = tempDot2;
+tempLine.child = tempDot;
+tempLine.child2 = tempDot2;
 tempCenter = tempCnotCross.getCenterPoint()
 tempLine.path[0][1] = tempCenter.x;
 tempLine.path[0][2] = tempCenter.y;
 tempLine.path[1][1] = tempCenter.x;
-tempLine.path[1][2] = tempDot2.top;
+tempLine.path[1][2] = tempDot.top;
 tempLine.sendToBack()
+tempLine2.path[0][1] = tempCenter.x;
+tempLine2.path[0][2] = tempCenter.y;
+tempLine2.path[1][1] = tempCenter.x;
+tempLine2.path[1][2] = tempDot2.top;
+tempLine2.sendToBack()
