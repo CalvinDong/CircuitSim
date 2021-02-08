@@ -52,7 +52,7 @@ const not = [
 ]
 
 const cnot = [
-  new fabric.Circle(                    /// FIX THE MOVING SHAPES WHILE HOVERING ISSUE
+  new fabric.Circle(     
   {
     radius: tileSize/6,
     originX: 'center', 
@@ -91,7 +91,7 @@ const cnot = [
 ]
 
 const toffoli = [
-  new fabric.Circle(                    /// FIX THE MOVING SHAPES WHILE HOVERING ISSUE
+  new fabric.Circle(              
   {
     radius: tileSize/6,
     originX: 'center', 
@@ -225,6 +225,8 @@ const cnotDot = {
   xAxis: null,
   gateType: 'multi_tile'
 }
+
+
 
 const tools = [
   {name: 'H', color: '#7400B8', gateType: 'single', symbol: null},
@@ -423,6 +425,7 @@ canvas.on('object:moved', function(options){
         left: (Math.floor(options.target.left/gridSize) * gridSize) + Math.round((gridSize/2 - options.target.width/2)),
         top: (Math.floor((options.target.top - toolboxOffset)/gridSize)) * gridSize + toolboxOffset + Math.round(gridSize/2 - options.target.width/2),
       });
+      options.target.setCoords()
       CalculateIntersection(options);
     }
     else if (options.target.top < toolboxOffset) {
@@ -434,9 +437,8 @@ canvas.on('object:moved', function(options){
       canvas.remove(options.target);
     }
     else{
-      //SnapToPreviousPosition(options);
+      SnapToPreviousPosition(options);
     }
-    options.target.setCoords();
     canvas.renderAll();
   }
 });
@@ -476,11 +478,12 @@ function CalculateIntersection(options){ // Determine if tile is being moved int
     if (obj === options.target) {
       return;
     }
-    
+
     if (obj.type == 'path' && obj.parent.name == 'cnotCross'){
       if (obj.parent.tof){
         if (obj.parent != options.target && (options.target.parent != obj.parent)){
           if (options.target.intersectsWithVertPath(obj)){
+            console.log("getting vert broi")
             SnapToPreviousPosition(options)
             return;
           }
@@ -506,12 +509,6 @@ function CalculateIntersection(options){ // Determine if tile is being moved int
 fabric.Object.prototype.intersectsWithVertPath = function(obj) { //checks if object intersects with vertical path from multi line gates 
   let topLeft;
   let bottomRight;
-
-  /*if (obj.parent.tof){
-    if (obj.parent.line == obj || obj.parent.line2 == obj){
-      return false;
-    }
-  }*/
 
   if (obj.path[0][2] > obj.path[1][2]){
     topLeft = new fabric.Point(obj.path[0][1] - lineStrokeWidth/2, obj.path[0][2])
@@ -753,3 +750,37 @@ function CreateToffoli(options){
   return tempCnotCross;
 }
 
+const cross = [
+  new fabric.Line([0, Math.floor(tileSize/3), 0, -Math.floor(tileSize/3)],
+    {
+      originX: 'center',
+      originY: 'center',
+      stroke: 'GREY',
+      strokeWidth: Math.round(tileSize/12),
+      angle: 45
+    }),
+    new fabric.Line([0, Math.floor(tileSize/3), 0, -Math.floor(tileSize/3)],
+    {
+      originX: 'center',
+      originY: 'center',
+      stroke: 'GREY',
+      strokeWidth: Math.round(tileSize/12),
+      angle: -45
+    })
+]
+
+const swapCross = {
+  hasControls: false,
+  selectable: true,
+  name: 'swapCross',
+  child: null,
+  line: null,
+  hoverCursor: 'grab',
+  moveCursor: 'grabbing',
+  gateType: 'multi_tile',
+}
+
+canvas.add(new fabric.Group(
+  cross,
+  {...swapCross, left: 500, top: 500}
+))
