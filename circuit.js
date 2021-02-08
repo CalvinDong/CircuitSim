@@ -164,6 +164,42 @@ const circleCross = [
   }),
 ]
 
+const swap = [
+  new fabric.Line([ 0, -tileSize/6, 0, tileSize/6], {
+    originX: 'center',
+    originY: 'center',
+    top: -tileSize/4,
+    stroke: 'GREY',
+    angle: 45
+  }),
+  new fabric.Line([-tileSize/6, 0, tileSize/6, 0], {
+    originX: 'center',
+    originY: 'center',
+    top: -tileSize/4,
+    stroke: 'GREY',
+    angle: 45
+  }),
+  new fabric.Line([ 0, -tileSize/6, 0, tileSize/6], {
+    originX: 'center',
+    originY: 'center',
+    top: tileSize/4,
+    stroke: 'GREY',
+    angle: 45
+  }),
+  new fabric.Line([-tileSize/6, 0, tileSize/6, 0], {
+    originX: 'center',
+    originY: 'center',
+    top: tileSize/4,
+    stroke: 'GREY',
+    angle: 45
+  }),
+  new fabric.Line([0, tileSize/6, 0, -tileSize/6], {
+    originX: 'center',
+    originY: 'center',
+    stroke: 'GREY',
+  })
+]
+
 const cnotCross = 
 {
   hasControls: false,
@@ -173,7 +209,8 @@ const cnotCross =
   line: null,
   hoverCursor: 'grab',
   moveCursor: 'grabbing',
-  gateType: 'multi_tile'
+  gateType: 'multi_tile',
+  tof: false
 }
 
 const cnotDot = {
@@ -200,7 +237,8 @@ const tools = [
   {name: 'U', color: '#64DFDF', gateType: 'single', symbol: null},
   {name: 'not', color: '#72EFDD', gateType: 'multi', symbol: not},
   {name: 'cnot', color: '#80FFDB', gateType: 'multi_tile', symbol: cnot},
-  {name: 'toffoli', color: '#80FFAE', gateType: 'multi_tile', symbol: toffoli}
+  {name: 'toffoli', color: '#80FFAE', gateType: 'multi_tile', symbol: toffoli},
+  {name: 'swap', color: '#80FF9F', gateType: 'multi_tile', symbol: swap}
 
 ]
 
@@ -373,6 +411,11 @@ canvas.on('object:moved', function(options){
       options.target = CreateCnot(options);
       canvas.remove(temp)
     }
+    if (options.target.name == 'toffoli'){
+      temp = options.target;
+      options.target = CreateToffoli(options);
+      canvas.remove(temp)
+    }
   }
   if (options.target.selectable && options.target.type != gridGroup) {
     if (options.target.left < width && (options.target.top > toolboxOffset) && (options.target.top < toolboxOffset + (gridSize * qubits))){
@@ -391,7 +434,7 @@ canvas.on('object:moved', function(options){
       canvas.remove(options.target);
     }
     else{
-      SnapToPreviousPosition(options);
+      //SnapToPreviousPosition(options);
     }
     options.target.setCoords();
     canvas.renderAll();
@@ -413,7 +456,6 @@ canvas.on('object:moved', function(options){
     CnotReset(options);
   }
   if (options.target && options.target.name == 'cnotDot'){
-    console.log("eh")
     CdotReset(options);
   }
 });
@@ -434,12 +476,26 @@ function CalculateIntersection(options){ // Determine if tile is being moved int
     if (obj === options.target) {
       return;
     }
-    if (((obj.type == 'path' && obj.parent != options.target) && (obj.type == 'path' && obj.child != options.target))){
-      if (options.target.intersectsWithVertPath(obj)){
-        SnapToPreviousPosition(options)
-        return;
+    
+    if (obj.type == 'path' && obj.parent.name == 'cnotCross'){
+      if (obj.parent.tof){
+        if (obj.parent != options.target && (options.target.parent != obj.parent)){
+          if (options.target.intersectsWithVertPath(obj)){
+            SnapToPreviousPosition(options)
+            return;
+          }
+        }
+      }
+      else{
+        if (obj.parent != options.target && obj.child != options.target){ // Only execute on objects not part of same multi gate
+          if (options.target.intersectsWithVertPath(obj)){
+            SnapToPreviousPosition(options)
+            return;
+          }
+        }
       }
     }
+
     if (options.target.intersectsWithObject(obj) && obj != gridGroup) {
       SnapToPreviousPosition(options)
       return;
@@ -450,6 +506,13 @@ function CalculateIntersection(options){ // Determine if tile is being moved int
 fabric.Object.prototype.intersectsWithVertPath = function(obj) { //checks if object intersects with vertical path from multi line gates 
   let topLeft;
   let bottomRight;
+
+  /*if (obj.parent.tof){
+    if (obj.parent.line == obj || obj.parent.line2 == obj){
+      return false;
+    }
+  }*/
+
   if (obj.path[0][2] > obj.path[1][2]){
     topLeft = new fabric.Point(obj.path[0][1] - lineStrokeWidth/2, obj.path[0][2])
     bottomRight = new fabric.Point(obj.path[1][1] + lineStrokeWidth/2, obj.path[1][2])
@@ -461,8 +524,6 @@ fabric.Object.prototype.intersectsWithVertPath = function(obj) { //checks if obj
   if (obj.path[0][2] == obj.path[1][2]){
     return false;
   }
-  console.log(topLeft)
-  console.log(bottomRight)
   return (this.intersectsWithRect(topLeft, bottomRight))
 }
 
@@ -555,13 +616,13 @@ function CnotReset(options){
   options.target.line.path[1][1] = options.target.child.left + options.target.child.radius;
   options.target.line.path[1][2] = options.target.child.top;
   if (options.target.child2){ // For toffoli gate
-    options.target.child.set('top',options.target.top + gridSize)
+    options.target.child.set('top',options.target.top + gridSize/2 + options.target.child.radius);
     options.target.child2.set(
       {
         left: options.target.left + options.target.width/2 - options.target.child2.width/2, 
-        top: options.target.top + gridSize + gridSize/1.5
+        top: options.target.top + gridSize
       }
-    );
+    )
     options.target.child2.setCoords();
     options.target.line2.path[0][1] = options.target.left + options.target.width/2;
     options.target.line2.path[0][2] = options.target.top + options.target.width/2;
@@ -569,6 +630,16 @@ function CnotReset(options){
     options.target.line2.path[1][2] = options.target.child2.top;
   }
 }
+
+function CdotReset(options){
+  options.target.set({left: options.target.parent.left + options.target.parent.width/2 - options.target.radius})
+  options.target.line.path[1][1] = options.target.left + options.target.radius;
+  options.target.line.path[1][2] = options.target.top;
+  if (options.target.child2){ //
+
+  }
+}
+
 
 function CdotReset(options){
   options.target.set({left: options.target.parent.left + options.target.parent.width/2 - options.target.radius})
@@ -617,121 +688,68 @@ function CreateCnot(options){
 }
 
 function CreateToffoli(options){
-  options.target.child.set(
-    {
-      left: options.target.left + options.target.width/2 - options.target.child.width/2, 
-      top: options.target.top + gridSize/1.5
-    }
-  );
-  options.target.child.setCoords();
-  options.target.line.path[0][1] = options.target.left + options.target.width/2;
-  options.target.line.path[0][2] = options.target.top + options.target.width/2;
-  options.target.line.path[1][1] = options.target.child.left + options.target.child.radius;
-  options.target.line.path[1][2] = options.target.child.top;
-}
-
-function CdotReset(options){
-  options.target.set({left: options.target.parent.left + options.target.parent.width/2 - options.target.radius})
-  options.target.line.path[1][1] = options.target.left + options.target.radius;
-  options.target.line.path[1][2] = options.target.top;
-}
-function CreateCnot(options){
   canvas.add(new fabric.Group(
     circleCross,
-    {...cnotCross, left: options.target.left, top: options.target.top}
+    {...cnotCross, left: options.target.left, top: options.target.top, tempLine2: null, tof: true}
   ))
   
   let canvasObjects = canvas.getObjects();
-
+  
   canvas.add(new fabric.Circle(
     {
       ...cnotDot, 
       left: canvasObjects[canvasObjects.length -1].left + ((canvasObjects[canvasObjects.length -1].width/2) - dotRadius ),
-      top: canvasObjects[canvasObjects.length -1].top + gridSize/1.5
+      top: canvasObjects[canvasObjects.length -1].top + gridSize/2 + cnotDot.radius
     })
   )
-
+  
+  canvas.add(new fabric.Circle(
+    {
+      ...cnotDot, 
+      left: canvasObjects[canvasObjects.length -1].left + ((canvasObjects[canvasObjects.length -1].width/2) - dotRadius ),
+      top: canvasObjects[canvasObjects.length -1].top + gridSize
+    })
+  )
+  
+  canvas.add(new fabric.Path('M 0 0 L 0 0', {stroke: 'grey', strokeWidth: lineStrokeWidth, objectCaching: false, parent: null, child: null}))
   canvas.add(new fabric.Path('M 0 0 L 0 0', {stroke: 'grey', strokeWidth: lineStrokeWidth, objectCaching: false, parent: null, child: null}))
   let tempCnotCross;
   let tempDot;
+  let tempDot2;
   let tempLine;
+  let tempLine2;
   let tempCenter;
   canvasObjects = canvas.getObjects();
-  tempCnotCross = canvasObjects[canvasObjects.length - 3];
-  tempDot = canvasObjects[canvasObjects.length - 2];
-  tempLine = canvasObjects[canvasObjects.length - 1];
+  console.log(canvasObjects = canvas.getObjects())
+  tempCnotCross = canvasObjects[canvasObjects.length - 5];
+  tempDot = canvasObjects[canvasObjects.length - 4];
+  tempDot2 = canvasObjects[canvasObjects.length - 3];
+  tempLine = canvasObjects[canvasObjects.length - 2];
+  tempLine2 = canvasObjects[canvasObjects.length - 1];
   tempCnotCross.child = tempDot;
+  tempCnotCross.child2 = tempDot2;
   tempDot.parent = tempCnotCross;
+  tempDot2.parent = tempCnotCross;
   tempCnotCross.line = tempLine;
+  tempCnotCross.line2 = tempLine2;
   tempDot.line = tempLine;
+  tempDot2.line = tempLine2;
   tempLine.parent = tempCnotCross;
   tempLine.child = tempDot;
+  tempLine2.parent = tempCnotCross;
+  tempLine2.child = tempDot2;
   tempCenter = tempCnotCross.getCenterPoint()
   tempLine.path[0][1] = tempCenter.x;
   tempLine.path[0][2] = tempCenter.y;
   tempLine.path[1][1] = tempCenter.x;
   tempLine.path[1][2] = tempDot.top;
-  tempLine.sendToBack()
+  tempLine.sendToBack();
+  tempLine2.path[0][1] = tempCenter.x;
+  tempLine2.path[0][2] = tempCenter.y;
+  tempLine2.path[1][1] = tempCenter.x;
+  tempLine2.path[1][2] = tempDot2.top;
+  tempLine2.sendToBack();
+  console.log(tempCnotCross)
   return tempCnotCross;
 }
 
-canvas.add(new fabric.Group(
-  circleCross,
-  {...cnotCross, left: 500, top: 500, tempLine2: null}
-))
-
-let canvasObjects = canvas.getObjects();
-
-canvas.add(new fabric.Circle(
-  {
-    ...cnotDot, 
-    left: canvasObjects[canvasObjects.length -1].left + ((canvasObjects[canvasObjects.length -1].width/2) - dotRadius ),
-    top: canvasObjects[canvasObjects.length -1].top + gridSize
-  })
-)
-
-canvas.add(new fabric.Circle(
-  {
-    ...cnotDot, 
-    left: canvasObjects[canvasObjects.length -1].left + ((canvasObjects[canvasObjects.length -1].width/2) - dotRadius ),
-    top: canvasObjects[canvasObjects.length -1].top + gridSize + gridSize/1.5
-  })
-)
-
-canvas.add(new fabric.Path('M 0 0 L 0 0', {stroke: 'grey', strokeWidth: lineStrokeWidth, objectCaching: false, parent: null, child: null}))
-canvas.add(new fabric.Path('M 0 0 L 0 0', {stroke: 'grey', strokeWidth: lineStrokeWidth, objectCaching: false, parent: null, child: null}))
-let tempCnotCross;
-let tempDot;
-let tempDot2;
-let tempLine;
-let tempLine2;
-let tempCenter;
-canvasObjects = canvas.getObjects();
-console.log(canvasObjects = canvas.getObjects())
-tempCnotCross = canvasObjects[canvasObjects.length - 5];
-tempDot = canvasObjects[canvasObjects.length - 4];
-tempDot2 = canvasObjects[canvasObjects.length - 3];
-tempLine = canvasObjects[canvasObjects.length - 2];
-tempLine2 = canvasObjects[canvasObjects.length - 1];
-tempCnotCross.child = tempDot;
-tempCnotCross.child2 = tempDot2;
-tempDot.parent = tempCnotCross;
-tempDot2.parent = tempCnotCross;
-tempCnotCross.line = tempLine;
-tempCnotCross.line2 = tempLine2;
-tempDot.line = tempLine;
-tempDot2.line = tempLine2;
-tempLine.parent = tempCnotCross;
-tempLine.child = tempDot;
-tempLine.child2 = tempDot2;
-tempCenter = tempCnotCross.getCenterPoint()
-tempLine.path[0][1] = tempCenter.x;
-tempLine.path[0][2] = tempCenter.y;
-tempLine.path[1][1] = tempCenter.x;
-tempLine.path[1][2] = tempDot.top;
-tempLine.sendToBack()
-tempLine2.path[0][1] = tempCenter.x;
-tempLine2.path[0][2] = tempCenter.y;
-tempLine2.path[1][1] = tempCenter.x;
-tempLine2.path[1][2] = tempDot2.top;
-tempLine2.sendToBack()
