@@ -437,7 +437,7 @@ canvas.on('object:moved', function(options){
       canvas.remove(options.target);
     }
     else{
-      SnapToPreviousPosition(options);
+      //SnapToPreviousPosition(options);
     }
     canvas.renderAll();
   }
@@ -632,9 +632,6 @@ function CdotReset(options){
   options.target.set({left: options.target.parent.left + options.target.parent.width/2 - options.target.radius})
   options.target.line.path[1][1] = options.target.left + options.target.radius;
   options.target.line.path[1][2] = options.target.top;
-  if (options.target.child2){ //
-
-  }
 }
 
 
@@ -750,6 +747,7 @@ function CreateToffoli(options){
   return tempCnotCross;
 }
 
+/*
 const cross = [
   new fabric.Line([0, Math.floor(tileSize/3), 0, -Math.floor(tileSize/3)],
     {
@@ -759,7 +757,7 @@ const cross = [
       strokeWidth: Math.round(tileSize/12),
       angle: 45
     }),
-    new fabric.Line([0, Math.floor(tileSize/3), 0, -Math.floor(tileSize/3)],
+  new fabric.Line([0, Math.floor(tileSize/3), 0, -Math.floor(tileSize/3)],
     {
       originX: 'center',
       originY: 'center',
@@ -780,7 +778,36 @@ const swapCross = {
   gateType: 'multi_tile',
 }
 
+
+canvas.add(new fabric.Group(cross, {...swapCross, left: 500, top: 500}))
+
+let canvasObjects = canvas.getObjects();
+
 canvas.add(new fabric.Group(
-  cross,
-  {...swapCross, left: 500, top: 500}
+  [
+    new fabric.Line([0, Math.floor(tileSize/3), 0, -Math.floor(tileSize/3)], // Has to be put in full otherwise it just spawns on top of the first cross group???
+      {
+        originX: 'center',
+        originY: 'center',
+        stroke: 'GREY',
+        strokeWidth: Math.round(tileSize/12),
+        angle: 45
+      }),
+    new fabric.Line([0, Math.floor(tileSize/3), 0, -Math.floor(tileSize/3)],
+      {
+        originX: 'center',
+        originY: 'center',
+        stroke: 'GREY',
+        strokeWidth: Math.round(tileSize/12),
+        angle: -45
+      })
+  ],
+  {...swapCross, left: 500, top: canvasObjects[canvasObjects.length -1].top + gridSize}
 ))
+
+canvas.add(new fabric.Path('M 0 0 L 0 0', {stroke: 'grey', strokeWidth: lineStrokeWidth, objectCaching: false, parent: null, child: null}))
+
+let tempCross;
+let tempCross2;
+let tempLine;
+canvasObjects = canvas.getObjects();*/
