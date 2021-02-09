@@ -422,8 +422,8 @@ canvas.on('object:moved', function(options){
   if (options.target.selectable && options.target.type != gridGroup) {
     if (options.target.left < width && (options.target.top > toolboxOffset) && (options.target.top < toolboxOffset + (gridSize * qubits))){
       options.target.set({ // Placing in the center of the grid tiles
-        left: (Math.floor(options.target.left/gridSize) * gridSize) + Math.round((gridSize/2 - options.target.width/2)),
-        top: (Math.floor((options.target.top - toolboxOffset)/gridSize)) * gridSize + toolboxOffset + Math.round(gridSize/2 - options.target.width/2),
+        left: (Math.round(options.target.left/gridSize) * gridSize) + Math.round((gridSize/2 - options.target.width/2)),
+        top: (Math.round((options.target.top - toolboxOffset)/gridSize)) * gridSize + toolboxOffset + Math.round(gridSize/2 - options.target.width/2),
       });
       options.target.setCoords()
       CalculateIntersection(options);
@@ -478,8 +478,7 @@ function CalculateIntersection(options){ // Determine if tile is being moved int
     if (obj === options.target) {
       return;
     }
-
-    if (obj.type == 'path' && obj.parent.name == 'cnotCross'){
+    /*if (obj.type == 'path' && obj.parent.name == 'cnotCross'){
       if (obj.parent.tof){
         if (obj.parent != options.target && (options.target.parent != obj.parent)){
           if (options.target.intersectsWithVertPath(obj)){
@@ -497,7 +496,7 @@ function CalculateIntersection(options){ // Determine if tile is being moved int
           }
         }
       }
-    }
+    }*/
 
     if (options.target.intersectsWithObject(obj) && obj != gridGroup) {
       SnapToPreviousPosition(options)
@@ -783,7 +782,7 @@ canvas.add(new fabric.Group(
       {
         originX: 'center',
         originY: 'center',
-        stroke: 'GREY',
+        stroke: 'RED',
         strokeWidth: Math.round(tileSize/12),
         angle: 45
       }),
@@ -791,15 +790,15 @@ canvas.add(new fabric.Group(
       {
         originX: 'center',
         originY: 'center',
-        stroke: 'GREY',
+        stroke: 'RED',
         strokeWidth: Math.round(tileSize/12),
         angle: -45
       })
   ],
-  {...swapCross, left: 500, top: canvasObjects[canvasObjects.length -1].top + gridSize/1.5}
+  {...swapCross, left: 500, top: canvasObjects[canvasObjects.length -1].top + gridSize}
 ))
 
-canvas.add(new fabric.Path('M 0 0 L 0 0', {stroke: 'grey', strokeWidth: lineStrokeWidth, objectCaching: false, parent: null, child: null}))
+canvas.add(new fabric.Path('M 0 0 L 0 0', {stroke: 'grey', strokeWidth: lineStrokeWidth, objectCaching: false, parent: null, parent2: null}))
 
 let tempCross;
 let tempCross2;
@@ -811,6 +810,9 @@ tempLine = canvasObjects[canvasObjects.length - 1];
 tempCross.parent = tempCross2;
 tempCross2.parent = tempCross;
 tempCross.line = tempLine;
+tempCross2.line = tempLine;
+tempLine.parent = tempCross;
+tempLine.parent2 = tempCross2
 tempCenter = tempCross.getCenterPoint()
 tempLine.path[0][1] = tempCenter.x;
 tempLine.path[0][2] = tempCenter.y;
@@ -820,13 +822,38 @@ tempLine.sendToBack();
 
 canvas.on('object:moving', function(options){
   if (options.target.name == 'swapCross'){
+    swapCrossReset(options);
+  }
+});
+
+canvas.on('object:moved', function(options){
+  if (options.target.name == 'swapCross'){
     options.target.parent.set({
       left: options.target.left,
-      top: options.target.top + gridSize/1.5
+      top: options.target.parent.top
     })
     options.target.line.path[0][1] = options.target.left + options.target.width/2;
     options.target.line.path[0][2] = options.target.top + options.target.height/2;
-    options.target.line.path[1][1] = options.target.left + options.target.width/2;
-    options.target.line.path[1][2] = options.target.parent.top + options.target.parent.height/2
+    options.target.line.path[1][1] = options.target.parent.left + options.target.width/2;
+    options.target.line.path[1][2] = options.target.parent.top + options.target.parent.height/2;
+    options.target.setCoords();
+    options.target.parent.setCoords();
   }
 })
+
+canvas.on('selection:created', function(options){
+  if (options.target && options.target.name == 'swapCross'){
+    console.log(options)
+  }
+})
+
+canvas.on('mouse:move')
+
+function swapCrossReset(options){
+  options.target.line.path[0][1] = options.target.left + options.target.width/2;
+  options.target.line.path[0][2] = options.target.top + options.target.height/2;
+  options.target.line.path[1][1] = options.target.parent.left + options.target.width/2;
+  options.target.line.path[1][2] = options.target.parent.top + options.target.parent.height/2;
+} 
+
+console.log(canvas.getObjects())
