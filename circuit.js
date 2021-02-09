@@ -445,7 +445,7 @@ canvas.on('object:moved', function(options){
 
 canvas.on('object:moving', function(options){ // Makes multi gates behave when dragged, 
   // SHOULD REALLY LOOK AT MAKING ORIGINS AROUND X TO AVOID CALCULATIONS
-if (options.target && options.target.name == 'cnotDot'){
+  if (options.target && options.target.name == 'cnotDot'){
     CdotReset(options)
   }
   if (options.target && options.target.name == 'cnotCross'){
@@ -612,6 +612,7 @@ function CnotReset(options){
   options.target.line.path[0][2] = options.target.top + options.target.width/2;
   options.target.line.path[1][1] = options.target.child.left + options.target.child.radius;
   options.target.line.path[1][2] = options.target.child.top;
+  
   if (options.target.child2){ // For toffoli gate
     options.target.child.set('top',options.target.top + gridSize/2 + options.target.child.radius);
     options.target.child2.set(
@@ -627,13 +628,6 @@ function CnotReset(options){
     options.target.line2.path[1][2] = options.target.child2.top;
   }
 }
-
-function CdotReset(options){
-  options.target.set({left: options.target.parent.left + options.target.parent.width/2 - options.target.radius})
-  options.target.line.path[1][1] = options.target.left + options.target.radius;
-  options.target.line.path[1][2] = options.target.top;
-}
-
 
 function CdotReset(options){
   options.target.set({left: options.target.parent.left + options.target.parent.width/2 - options.target.radius})
@@ -747,7 +741,7 @@ function CreateToffoli(options){
   return tempCnotCross;
 }
 
-/*
+
 const cross = [
   new fabric.Line([0, Math.floor(tileSize/3), 0, -Math.floor(tileSize/3)],
     {
@@ -771,7 +765,7 @@ const swapCross = {
   hasControls: false,
   selectable: true,
   name: 'swapCross',
-  child: null,
+  parent: null,
   line: null,
   hoverCursor: 'grab',
   moveCursor: 'grabbing',
@@ -802,7 +796,7 @@ canvas.add(new fabric.Group(
         angle: -45
       })
   ],
-  {...swapCross, left: 500, top: canvasObjects[canvasObjects.length -1].top + gridSize}
+  {...swapCross, left: 500, top: canvasObjects[canvasObjects.length -1].top + gridSize/1.5}
 ))
 
 canvas.add(new fabric.Path('M 0 0 L 0 0', {stroke: 'grey', strokeWidth: lineStrokeWidth, objectCaching: false, parent: null, child: null}))
@@ -810,4 +804,29 @@ canvas.add(new fabric.Path('M 0 0 L 0 0', {stroke: 'grey', strokeWidth: lineStro
 let tempCross;
 let tempCross2;
 let tempLine;
-canvasObjects = canvas.getObjects();*/
+canvasObjects = canvas.getObjects();
+tempCross = canvasObjects[canvasObjects.length - 3];
+tempCross2 = canvasObjects[canvasObjects.length - 2];
+tempLine = canvasObjects[canvasObjects.length - 1];
+tempCross.parent = tempCross2;
+tempCross2.parent = tempCross;
+tempCross.line = tempLine;
+tempCenter = tempCross.getCenterPoint()
+tempLine.path[0][1] = tempCenter.x;
+tempLine.path[0][2] = tempCenter.y;
+tempLine.path[1][1] = tempCenter.x;
+tempLine.path[1][2] = tempCross2.top + tempCross.width/2;
+tempLine.sendToBack();
+
+canvas.on('object:moving', function(options){
+  if (options.target.name == 'swapCross'){
+    options.target.parent.set({
+      left: options.target.left,
+      top: options.target.top + gridSize/1.5
+    })
+    options.target.line.path[0][1] = options.target.left + options.target.width/2;
+    options.target.line.path[0][2] = options.target.top + options.target.height/2;
+    options.target.line.path[1][1] = options.target.left + options.target.width/2;
+    options.target.line.path[1][2] = options.target.parent.top + options.target.parent.height/2
+  }
+})
