@@ -226,7 +226,35 @@ const cnotDot = {
   gateType: 'multi_tile'
 }
 
+const cross = [
+  new fabric.Line([0, Math.floor(tileSize/3), 0, -Math.floor(tileSize/3)],
+    {
+      originX: 'center',
+      originY: 'center',
+      stroke: 'GREY',
+      strokeWidth: Math.round(tileSize/12),
+      angle: 45
+    }),
+  new fabric.Line([0, Math.floor(tileSize/3), 0, -Math.floor(tileSize/3)],
+    {
+      originX: 'center',
+      originY: 'center',
+      stroke: 'GREY',
+      strokeWidth: Math.round(tileSize/12),
+      angle: -45
+    })
+]
 
+const swapCross = {
+  hasControls: false,
+  selectable: true,
+  name: 'swapCross',
+  parent: null,
+  line: null,
+  hoverCursor: 'grab',
+  moveCursor: 'grabbing',
+  gateType: 'multi_tile',
+}
 
 const tools = [
   {name: 'H', color: '#7400B8', gateType: 'single', symbol: null},
@@ -416,6 +444,11 @@ canvas.on('object:moved', function(options){
     if (options.target.name == 'toffoli'){
       temp = options.target;
       options.target = CreateToffoli(options);
+      canvas.remove(temp)
+    }
+    if (options.target.name == 'swap'){
+      temp = options.target;
+      options.target = CreateSwap(options);
       canvas.remove(temp)
     }
   }
@@ -740,85 +773,57 @@ function CreateToffoli(options){
   return tempCnotCross;
 }
 
+function CreateSwap(options){
+  canvas.add(new fabric.Group(cross, {...swapCross, left: options.target.left, top: options.target.top}))
 
-const cross = [
-  new fabric.Line([0, Math.floor(tileSize/3), 0, -Math.floor(tileSize/3)],
-    {
-      originX: 'center',
-      originY: 'center',
-      stroke: 'GREY',
-      strokeWidth: Math.round(tileSize/12),
-      angle: 45
-    }),
-  new fabric.Line([0, Math.floor(tileSize/3), 0, -Math.floor(tileSize/3)],
-    {
-      originX: 'center',
-      originY: 'center',
-      stroke: 'GREY',
-      strokeWidth: Math.round(tileSize/12),
-      angle: -45
-    })
-]
+  let canvasObjects = canvas.getObjects();
 
-const swapCross = {
-  hasControls: false,
-  selectable: true,
-  name: 'swapCross',
-  parent: null,
-  line: null,
-  hoverCursor: 'grab',
-  moveCursor: 'grabbing',
-  gateType: 'multi_tile',
+  canvas.add(new fabric.Group(
+    [
+      new fabric.Line([0, Math.floor(tileSize/3), 0, -Math.floor(tileSize/3)], // Has to be put in full otherwise it just spawns on top of the first cross group???
+        {
+          originX: 'center',
+          originY: 'center',
+          stroke: 'GREY',
+          strokeWidth: Math.round(tileSize/12),
+          angle: 45
+        }),
+      new fabric.Line([0, Math.floor(tileSize/3), 0, -Math.floor(tileSize/3)],
+        {
+          originX: 'center',
+          originY: 'center',
+          stroke: 'GREY',
+          strokeWidth: Math.round(tileSize/12),
+          angle: -45
+        })
+    ],
+    {...swapCross, left: 500, top: canvasObjects[canvasObjects.length -1].top + gridSize}
+  ))
+
+  canvas.add(new fabric.Path('M 0 0 L 0 0', {stroke: 'grey', strokeWidth: lineStrokeWidth, objectCaching: false, parent: null, parent2: null}))
+
+  let tempCross;
+  let tempCross2;
+  let tempLine;
+  canvasObjects = canvas.getObjects();
+  tempCross = canvasObjects[canvasObjects.length - 3];
+  tempCross2 = canvasObjects[canvasObjects.length - 2];
+  tempLine = canvasObjects[canvasObjects.length - 1];
+  tempCross.parent = tempCross2;
+  tempCross2.parent = tempCross;
+  tempCross.line = tempLine;
+  tempCross2.line = tempLine;
+  tempLine.parent = tempCross;
+  tempLine.parent2 = tempCross2
+  tempCenter = tempCross.getCenterPoint()
+  tempLine.path[0][1] = tempCenter.x;
+  tempLine.path[0][2] = tempCenter.y;
+  tempLine.path[1][1] = tempCenter.x;
+  tempLine.path[1][2] = tempCross2.top + tempCross.width/2;
+  tempLine.sendToBack();
+  return tempCross;
 }
 
-
-canvas.add(new fabric.Group(cross, {...swapCross, left: 500, top: 500}))
-
-let canvasObjects = canvas.getObjects();
-
-canvas.add(new fabric.Group(
-  [
-    new fabric.Line([0, Math.floor(tileSize/3), 0, -Math.floor(tileSize/3)], // Has to be put in full otherwise it just spawns on top of the first cross group???
-      {
-        originX: 'center',
-        originY: 'center',
-        stroke: 'RED',
-        strokeWidth: Math.round(tileSize/12),
-        angle: 45
-      }),
-    new fabric.Line([0, Math.floor(tileSize/3), 0, -Math.floor(tileSize/3)],
-      {
-        originX: 'center',
-        originY: 'center',
-        stroke: 'RED',
-        strokeWidth: Math.round(tileSize/12),
-        angle: -45
-      })
-  ],
-  {...swapCross, left: 500, top: canvasObjects[canvasObjects.length -1].top + gridSize}
-))
-
-canvas.add(new fabric.Path('M 0 0 L 0 0', {stroke: 'grey', strokeWidth: lineStrokeWidth, objectCaching: false, parent: null, parent2: null}))
-
-let tempCross;
-let tempCross2;
-let tempLine;
-canvasObjects = canvas.getObjects();
-tempCross = canvasObjects[canvasObjects.length - 3];
-tempCross2 = canvasObjects[canvasObjects.length - 2];
-tempLine = canvasObjects[canvasObjects.length - 1];
-tempCross.parent = tempCross2;
-tempCross2.parent = tempCross;
-tempCross.line = tempLine;
-tempCross2.line = tempLine;
-tempLine.parent = tempCross;
-tempLine.parent2 = tempCross2
-tempCenter = tempCross.getCenterPoint()
-tempLine.path[0][1] = tempCenter.x;
-tempLine.path[0][2] = tempCenter.y;
-tempLine.path[1][1] = tempCenter.x;
-tempLine.path[1][2] = tempCross2.top + tempCross.width/2;
-tempLine.sendToBack();
 
 canvas.on('object:moving', function(options){
   if (options.target.name == 'swapCross'){
@@ -847,13 +852,9 @@ canvas.on('selection:created', function(options){
   }
 })
 
-canvas.on('mouse:move')
-
 function swapCrossReset(options){
   options.target.line.path[0][1] = options.target.left + options.target.width/2;
   options.target.line.path[0][2] = options.target.top + options.target.height/2;
   options.target.line.path[1][1] = options.target.parent.left + options.target.width/2;
   options.target.line.path[1][2] = options.target.parent.top + options.target.parent.height/2;
 } 
-
-console.log(canvas.getObjects())
