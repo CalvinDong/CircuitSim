@@ -8,7 +8,7 @@ const minQubits = 2;
 const grid = 25;
 const gridSize = width/grid;
 const tileSize = gridSize * 0.7;
-const toolboxOffset = width/5;
+const toolboxOffset = width/8;
 const distMulti = gridSize;
 const lineStrokeWidth = 1;
 const dotRadius = 5;
@@ -27,7 +27,8 @@ const drag_rec = {
   selectable: true,
   hasControls: false,
   hoverCursor: 'grab',
-  moveCursor: 'grabbing',}
+  moveCursor: 'grabbing',
+}
 
 const not = [
   new fabric.Circle(
@@ -250,6 +251,7 @@ const swapCross = {
   selectable: true,
   name: 'swapCross',
   parent: null,
+  child: null,
   line: null,
   hoverCursor: 'grab',
   moveCursor: 'grabbing',
@@ -265,7 +267,7 @@ const tools = [
   {name: 'P', color: '#48BFE3', gateType: 'single', symbol: null},
   {name: 'Y', color: '#56CFE1', gateType: 'single', symbol: null},
   {name: 'U', color: '#64DFDF', gateType: 'single', symbol: null},
-  {name: 'not', color: '#72EFDD', gateType: 'multi', symbol: not},
+  {name: 'X', color: '#72EFDD', gateType: 'single', symbol: null},
   {name: 'cnot', color: '#80FFDB', gateType: 'multi_tile', symbol: cnot},
   {name: 'toffoli', color: '#80FFAE', gateType: 'multi_tile', symbol: toffoli},
   {name: 'swap', color: '#80FF9F', gateType: 'multi_tile', symbol: swap}
@@ -273,7 +275,7 @@ const tools = [
 ]
 
 let qubits = 2;
-let originalX = 0;
+let originalX = gridSize;
 let originalY = 0;
 let gridGroup = new fabric.Group([ ], {
   top: toolboxOffset,
@@ -293,6 +295,18 @@ let textField = {
 }
 
 DrawGrid();
+DrawQubit();
+canvas.add(new fabric.Text("|0〉", 
+    {
+      ...textField,
+      fill: 'black',
+      originX: 'left', 
+      left: 0,
+      top: (toolboxOffset) + gridSize/2,
+      gateType: 'qubitTell',
+      hoverCursor: 'pointer'
+    })
+  ); // Drawing the  qubit for the first line
 
 tools.forEach(function(element){ // Build the toolbox
   if (element.gateType == 'single'){
@@ -377,7 +391,7 @@ gridGroup.on('mousedown', function(){ // Make sure grid is always at the back
 })
 
 canvas.on('mouse:over', function(options){ // Spawn new draggable instance of gate when hovering over said gate tile in toolbox
-  if (options.target && options.target != gridGroup && !options.target.selectable){
+  if (options.target && options.target != gridGroup && !options.target.selectable && options.target.gateType !== 'qubitTell'){
     let drag_rect = 
     {
       width: tileSize, 
@@ -398,18 +412,19 @@ canvas.on('mouse:over', function(options){ // Spawn new draggable instance of ga
     }
 
     if (options.target._objects[1].type == 'text'){
-      /*canvas.add(new fabric.Group(
+      console.log(options.target.gateType)
+      canvas.add(new fabric.Group(
         [
           new fabric.Rect(drag_rect), 
           new fabric.Text(options.target._objects[1].text, textField)
         ], 
         drag_group
-      ));*/
-      options.target.clone(function(clone){
+      ));
+      /*options.target.clone(function(clone){
         clone.set(drag_group);
         canvas.add(clone);
         console.log(canvas.getObjects())
-      });
+      });*/
     }
     else{
       canvas.add(new fabric.Group(
@@ -463,11 +478,19 @@ canvas.on('object:moved', function(options){
     }
     else if (options.target.top < toolboxOffset) {
       console.log("removing")
-      if (options.target.gateType == 'multi_tile'){
+      /*if (options.target.gateType == 'multi_tile'){
         canvas.remove(options.target.child);
         canvas.remove(options.target.line);
-      }
-      canvas.remove(options.target);
+        canvas.remove(options.target.parent);
+        canvas.remove(options.target.line2);
+        canvas.remove(options.target.child2);
+        canvas.remove(options.target.parent.child);
+        canvas.remove(options.target.parent.child2);
+        canvas.remove(options.target.parent.line);
+        canvas.remove(options.target.parent.line2);
+      }*/
+      //canvas.remove(options.target);
+      RemoveTile(options.target);
     }
     else{
       //SnapToPreviousPosition(options);
@@ -495,7 +518,35 @@ canvas.on('object:moved', function(options){
   }
 });
 
-
+function RemoveTile(obj){
+  console.log(obj)
+  if (obj.gateType == 'single'){
+    console.log("yoi")
+    canvas.remove(obj)
+    return;
+  }
+  else{
+    if (obj.name == 'cnotDot'){
+      obj = obj.parent;
+    }
+    if (obj.name == 'cnotCross'){
+      canvas.remove(obj.line);
+      canvas.remove(obj.child);
+      if (obj.tof){
+        canvas.remove(obj.line2);
+        canvas.remove(obj.child2);
+      }
+      canvas.remove(obj);
+      return;
+    }
+    if (obj.name == 'swapCross'){
+      canvas.remove(obj.line);
+      canvas.remove(obj.parent);
+      canvas.remove(obj);
+      return;
+    }
+  }
+}
 
 function SnapToPreviousPosition(options){ // If tile is not placed in a permitted area, then put it back to where it came from
   console.log("back to where you belong")
@@ -559,7 +610,7 @@ fabric.Object.prototype.intersectsWithVertPath = function(obj) { //checks if obj
 function DrawGrid(){ // Draw lines
   for (var i = 0; i < qubits; i++){
     gridGroup.addWithUpdate(new fabric.Line(
-        [ 0, (toolboxOffset) + (gridSize * i) + gridSize/2, width,  toolboxOffset + (gridSize * i) + gridSize/2], 
+        [ gridSize, (toolboxOffset) + (gridSize * i) + gridSize/2, width,  toolboxOffset + (gridSize * i) + gridSize/2], 
         { stroke: '#ccc', selectable: false }
       )); // x-axis
   }
@@ -582,9 +633,39 @@ function DrawGrid(){ // Draw lines
   */
 
   canvas.add(gridGroup);
-  canvas.sendToBack(gridGroup)
-  canvas.renderAll()
+  canvas.sendToBack(gridGroup);
+  canvas.renderAll();
 }
+
+function DrawQubit(){
+  for (var i = qubits - 1; i < qubits; i++){
+    canvas.add(new fabric.Text("|0〉", 
+    {
+      ...textField,
+      fill: 'black',
+      originX: 'left', 
+      left: 0,
+      top: (toolboxOffset) + (gridSize * i) + gridSize/2,
+      gateType: 'qubitTell',
+      hoverCursor: 'pointer'
+    })
+  )}
+  canvas.renderAll();
+}
+
+canvas.on('mouse:down', function(options){
+  let pressed = true;
+  if (options.target && options.target.gateType == 'qubitTell'){
+    if (options.target.text == '|0〉' && pressed){
+      options.target.text = '|1〉'
+      pressed = false;
+    }
+    if (options.target.text == '|1〉' && pressed){
+      options.target.text = '|0〉';
+      pressed = false;
+    }
+  }
+})
 
 function AddQubit(){ // Remove all grid lines then redraw them with an extra row
   if (qubits < maxQubits){
@@ -595,21 +676,33 @@ function AddQubit(){ // Remove all grid lines then redraw them with an extra row
     })
     canvas.remove(gridGroup);
     DrawGrid();
+    DrawQubit();
   }
 }
 
 function SubtractQubit(){ // Remove all grid lines then redraw them with one less row
   if (qubits > minQubits){
     console.log("subtract");
+    removeTilesFromLine();
     qubits--;
     gridGroup.forEachObject(function(obj){
       gridGroup.remove(obj);
     })
     canvas.remove(gridGroup);
     DrawGrid();
+    DrawQubit();
   }
-  var SVG = canvas.toSVG(); 
-  console.log(SVG);
+}
+
+function removeTilesFromLine(){
+  //let topLeft = new fabric.Point(0, toolboxOffset + ((gridSize) * qubits - gridSize));
+  //let bottomRight = new fabric.Point(width, toolboxOffset + ((gridSize) * qubits))
+  canvas.forEachObject(function(obj){
+    if (obj == gridGroup) return;
+    if (obj.top > toolboxOffset + (gridSize * (qubits - 1))){
+      RemoveTile(obj)
+    }
+  })
 }
 
 function SaveToSVG(){ // Creates SVG representation of circuit
@@ -773,6 +866,7 @@ function CreateToffoli(options){
   return tempCnotCross;
 }
 
+
 function CreateSwap(options){
   canvas.add(new fabric.Group(cross, {...swapCross, left: options.target.left, top: options.target.top}))
 
@@ -843,12 +937,6 @@ canvas.on('object:moved', function(options){
     options.target.line.path[1][2] = options.target.parent.top + options.target.parent.height/2;
     options.target.setCoords();
     options.target.parent.setCoords();
-  }
-})
-
-canvas.on('selection:created', function(options){
-  if (options.target && options.target.name == 'swapCross'){
-    console.log(options)
   }
 })
 
