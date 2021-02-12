@@ -295,6 +295,7 @@ let textField = {
 }
 
 let qArray = [{value: '|0〉', ref: null}, {value: '|0〉', ref: null}];
+let gateModel = [];
 
 DrawGrid();
 DrawQubit();
@@ -907,7 +908,7 @@ function CreateSwap(options){
   tempCross.line = tempLine;
   tempCross2.line = tempLine;
   tempLine.parent = tempCross;
-  tempLine.parent2 = tempCross2
+  tempLine.parent2 = tempCross2;
   tempCenter = tempCross.getCenterPoint()
   tempLine.path[0][1] = tempCenter.x;
   tempLine.path[0][2] = tempCenter.y;
@@ -945,3 +946,40 @@ function swapCrossReset(options){
   options.target.line.path[1][1] = options.target.parent.left + options.target.width/2;
   options.target.line.path[1][2] = options.target.parent.top + options.target.parent.height/2;
 } 
+
+function Calculate(){
+  console.log("calculating")
+  let canvasObjects = canvas.getObjects();
+  let refArray = [toolboxOffset] // Stores the position of each line so we can match each tile
+  gateModel = []; // Reset the gate model
+
+  for (i = 0; i < maxQubits - 1; i++){ // Initialise each line representation in gateModel array
+    gateModel.push([])
+  } 
+
+  for (j = 0; j < maxQubits; j++){
+    refArray.push(toolboxOffset + gridSize + (gridSize * j))
+  }
+  
+  console.log(refArray)
+  console.log(canvasObjects)
+
+  if (refArray[0 - 1]){
+    console.log("fantasy")
+  }
+
+  console.log(refArray[1-1])
+
+  canvas.forEachObject(function(obj){
+    //console.log(obj)
+    if (obj == gridGroup) return;
+    refArray.forEach(function(parsnip, parsley){
+      if ((parsley - 1 > -1) && obj.type != 'text' && obj.top > refArray[parsley - 1] && obj.top < parsnip){
+        console.log(parsley)
+        gateModel[parsley - 1].push(obj.name);
+      }
+    })
+  })
+  console.log(gateModel)
+
+}
