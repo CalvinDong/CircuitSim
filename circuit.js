@@ -465,7 +465,7 @@ canvas.on('object:moved', function(options){
         top: (Math.round((options.target.top - toolboxOffset)/gridSize)) * gridSize + toolboxOffset + Math.round(gridSize/2 - options.target.width/2),
       });
       options.target.setCoords()
-      CalculateIntersection(options);
+      CalculateIntersection(options); // Bug occurs here where placing cnot gate in certain situations will register cnotCross and snotDot as intersecting
     }
     else if (options.target.top < toolboxOffset) {
       console.log("removing")
@@ -508,36 +508,6 @@ canvas.on('object:moved', function(options){
     CdotReset(options);
   }
 });
-
-function RemoveTile(obj){
-  console.log(obj)
-  if (obj.gateType == 'single'){
-    console.log("yoi")
-    canvas.remove(obj)
-    return;
-  }
-  else{
-    if (obj.name == 'cnotDot'){
-      obj = obj.parent;
-    }
-    if (obj.name == 'cnotCross'){
-      canvas.remove(obj.line);
-      canvas.remove(obj.child);
-      if (obj.tof){
-        canvas.remove(obj.line2);
-        canvas.remove(obj.child2);
-      }
-      canvas.remove(obj);
-      return;
-    }
-    if (obj.name == 'swapCross'){
-      canvas.remove(obj.line);
-      canvas.remove(obj.parent);
-      canvas.remove(obj);
-      return;
-    }
-  }
-}
 
 function SnapToPreviousPosition(options){ // If tile is not placed in a permitted area, then put it back to where it came from
   console.log("back to where you belong")
@@ -628,7 +598,7 @@ function DrawGrid(){ // Draw lines
   canvas.renderAll();
 }
 
-function DrawQubit(){
+function DrawQubit(){ // Draw qubits and add to the model of the data
   let text = {
     ...textField,
     fill: 'black',
@@ -645,7 +615,7 @@ function DrawQubit(){
   })
 }
 
-canvas.on('mouse:down', function(options){
+canvas.on('mouse:down', function(options){ // Change the state if the qubit
   let pressed = true;
   if (options.target && options.target.gateType == 'qubitTell'){
     if (options.target.text == '|0〉' && pressed){
@@ -680,10 +650,10 @@ function AddQubit(){ // Remove all grid lines then redraw them with an extra row
 function SubtractQubit(){ // Remove all grid lines then redraw them with one less row
   if (qubits > minQubits){
     console.log("subtract");
-    removeTilesFromLine();
     qubits--;
     canvas.remove(qArray[qArray.length - 1].ref);
     qArray.pop();
+    removeTilesFromLine();
     gridGroup.forEachObject(function(obj){
       gridGroup.remove(obj);
     })
@@ -693,15 +663,45 @@ function SubtractQubit(){ // Remove all grid lines then redraw them with one les
   }
 }
 
-function removeTilesFromLine(){
+function removeTilesFromLine(){ // Looks for objects on the line to be removed and removes them
   //let topLeft = new fabric.Point(0, toolboxOffset + ((gridSize) * qubits - gridSize));
   //let bottomRight = new fabric.Point(width, toolboxOffset + ((gridSize) * qubits))
   canvas.forEachObject(function(obj){
     if (obj == gridGroup) return;
-    if (obj.top > toolboxOffset + (gridSize * (qubits - 1))){
+    if (obj.top > toolboxOffset + (gridSize * (qubits))){
       RemoveTile(obj)
     }
   })
+}
+
+function RemoveTile(obj){ // Removes objects from line being removed
+  console.log(obj)
+  if (obj.gateType == 'single'){
+    console.log("yoi")
+    canvas.remove(obj)
+    return;
+  }
+  else{
+    if (obj.name == 'cnotDot'){
+      obj = obj.parent;
+    }
+    if (obj.name == 'cnotCross'){
+      canvas.remove(obj.line);
+      canvas.remove(obj.child);
+      if (obj.tof){
+        canvas.remove(obj.line2);
+        canvas.remove(obj.child2);
+      }
+      canvas.remove(obj);
+      return;
+    }
+    if (obj.name == 'swapCross'){
+      canvas.remove(obj.line);
+      canvas.remove(obj.parent);
+      canvas.remove(obj);
+      return;
+    }
+  }
 }
 
 function SaveToSVG(){ // Creates SVG representation of circuit
@@ -724,7 +724,7 @@ function SearchToolSymbol(name){
   return obj.symbol;
 }
 
-function CnotReset(options){
+function CnotReset(options){ // Make cnot gate behave when being dragged
   options.target.child.set(
     {
       left: options.target.left + options.target.width/2 - options.target.child.width/2, 
@@ -753,13 +753,13 @@ function CnotReset(options){
   }
 }
 
-function CdotReset(options){
+function CdotReset(options){ // make the cnotDot behave when being dragged around by cnotCross
   options.target.set({left: options.target.parent.left + options.target.parent.width/2 - options.target.radius})
   options.target.line.path[1][1] = options.target.left + options.target.radius;
   options.target.line.path[1][2] = options.target.top;
 }
 
-function CreateCnot(options){
+function CreateCnot(options){ // Create cnot gate on line
   canvas.add(new fabric.Group(
     circleCross,
     {...cnotCross, left: options.target.left, top: options.target.top}
