@@ -294,19 +294,10 @@ let textField = {
   hasControls: false
 }
 
+let qArray = [{value: '|0〉', ref: null}, {value: '|0〉', ref: null}];
+
 DrawGrid();
 DrawQubit();
-canvas.add(new fabric.Text("|0〉", 
-    {
-      ...textField,
-      fill: 'black',
-      originX: 'left', 
-      left: 0,
-      top: (toolboxOffset) + gridSize/2,
-      gateType: 'qubitTell',
-      hoverCursor: 'pointer'
-    })
-  ); // Drawing the  qubit for the first line
 
 tools.forEach(function(element){ // Build the toolbox
   if (element.gateType == 'single'){
@@ -638,30 +629,35 @@ function DrawGrid(){ // Draw lines
 }
 
 function DrawQubit(){
-  for (var i = qubits - 1; i < qubits; i++){
-    canvas.add(new fabric.Text("|0〉", 
-    {
-      ...textField,
-      fill: 'black',
-      originX: 'left', 
-      left: 0,
-      top: (toolboxOffset) + (gridSize * i) + gridSize/2,
-      gateType: 'qubitTell',
-      hoverCursor: 'pointer'
-    })
-  )}
-  canvas.renderAll();
+  let text = {
+    ...textField,
+    fill: 'black',
+    originX: 'left', 
+    left: 0,
+    gateType: 'qubitTell',
+    hoverCursor: 'pointer'
+  }
+  qArray.forEach(function(qu, i){
+    if (qu.ref == null){
+      qu.ref = new fabric.Text('|0〉', {...text, top: (toolboxOffset) + (gridSize * i) + gridSize/2,});
+      canvas.add(qu.ref);
+    }
+  })
 }
 
 canvas.on('mouse:down', function(options){
   let pressed = true;
   if (options.target && options.target.gateType == 'qubitTell'){
     if (options.target.text == '|0〉' && pressed){
-      options.target.text = '|1〉'
+      let obj = qArray.find(qu => qu.ref == options.target);
+      obj.value = '|1〉';
+      options.target.text = '|1〉';
       pressed = false;
     }
     if (options.target.text == '|1〉' && pressed){
-      options.target.text = '|0〉';
+      let obj = qArray.find(qu => qu.ref == options.target);
+      obj.value = '|0〉';
+      options.target.text = '|0〉';;
       pressed = false;
     }
   }
@@ -671,6 +667,7 @@ function AddQubit(){ // Remove all grid lines then redraw them with an extra row
   if (qubits < maxQubits){
     console.log("add");
     qubits++;
+    qArray.push({value: '|0〉', ref: null});
     gridGroup.forEachObject(function(obj){
       gridGroup.remove(obj);
     })
@@ -685,6 +682,8 @@ function SubtractQubit(){ // Remove all grid lines then redraw them with one les
     console.log("subtract");
     removeTilesFromLine();
     qubits--;
+    canvas.remove(qArray[qArray.length - 1].ref);
+    qArray.pop();
     gridGroup.forEachObject(function(obj){
       gridGroup.remove(obj);
     })
