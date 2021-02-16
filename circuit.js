@@ -1,14 +1,14 @@
 const canvas = new fabric.Canvas('c', { selection: false });
-const width = window.innerWidth/2;
-const height = window.innerHeight/1.5;
+const width = Math.round(window.innerWidth/2);
+const height = Math.round(window.innerHeight/1.5);
 canvas.setWidth(width);
 canvas.setHeight(height);
 const maxQubits = 8;
 const minQubits = 2;
 const grid = 25;
-const gridSize = width/grid;
-const tileSize = gridSize * 0.7;
-const toolboxOffset = width/8;
+const gridSize = Math.round(width/grid);
+const tileSize = Math.round(gridSize * 0.7);
+const toolboxOffset = Math.round(width/8);
 const distMulti = gridSize;
 const lineStrokeWidth = 1;
 const dotRadius = 5;
@@ -948,38 +948,57 @@ function swapCrossReset(options){
 } 
 
 function Calculate(){
-  console.log("calculating")
+  /*console.log("calculating")
   let canvasObjects = canvas.getObjects();
   let refArray = [toolboxOffset] // Stores the position of each line so we can match each tile
   gateModel = []; // Reset the gate model
 
-  for (i = 0; i < maxQubits - 1; i++){ // Initialise each line representation in gateModel array
+  for (i = 0; i < qubits; i++){ // Initialise each line representation in gateModel array
     gateModel.push([])
   } 
 
-  for (j = 0; j < maxQubits; j++){
+  for (j = 0; j < qubits; j++){
     refArray.push(toolboxOffset + gridSize + (gridSize * j))
   }
   
-  console.log(refArray)
-  console.log(canvasObjects)
-
-  if (refArray[0 - 1]){
-    console.log("fantasy")
-  }
-
-  console.log(refArray[1-1])
-
   canvas.forEachObject(function(obj){
-    //console.log(obj)
     if (obj == gridGroup) return;
     refArray.forEach(function(parsnip, parsley){
       if ((parsley - 1 > -1) && obj.type != 'text' && obj.top > refArray[parsley - 1] && obj.top < parsnip){
-        console.log(parsley)
         gateModel[parsley - 1].push(obj.name);
       }
     })
   })
-  console.log(gateModel)
+  console.log(gateModel)*/
+
+  let canvasObjects = canvas.getObjects();
+  gateModel = []; // Reset the gate model
+
+  for (i = 0; i < qubits; i++){ // Initialise each line representation in gateModel array
+    gateModel.push([])
+  } 
+  
+  canvas.forEachObject(function(obj){
+    if (obj == gridGroup || obj.type == 'text' || obj.top < toolboxOffset) return;
+    let temp = obj.getCenterPoint();
+    let qPosition = Math.round((temp.y - (toolboxOffset + gridSize/2))/gridSize); // Note there's a small difference in the calculations requiring some rounding. Could lead to errors on certain resolutions?
+    //let gatePosition = Math.round(obj.left/gridSize) - 1; Must use center(not obj.left) since left uses tile left (may cause errors)
+    let gatePosition = Math.round(((temp.x - (gridSize + gridSize/2))/gridSize));
+    //console.log(((temp.x - (gridSize + gridSize/2))/gridSize));
+    //console.log((temp.y - (toolboxOffset + gridSize/2))/gridSize)
+    let objLen = gateModel[qPosition].length;
+    let gatePosLen = gatePosition + 1;
+    //console.log(gatePosition);
+    //gateModel[qPosition].push(obj.name);
+    if (objLen < gatePosLen){ // Make sure the array holding gates for a qubit is long enough
+      for (i = objLen - 1; i < gatePosLen - 1; i++){
+        gateModel[qPosition].push(null);
+      }
+    }
+    gateModel[qPosition][gatePosition] = obj.name;
+
+    console.log(gateModel)
+  })
+
 
 }
