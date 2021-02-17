@@ -1,3 +1,5 @@
+// Make everything easier to edit by making text offset for those clicky text things on the left (especially for calc functions)
+
 const canvas = new fabric.Canvas('c', { selection: false });
 const width = Math.round(window.innerWidth/2);
 const height = Math.round(window.innerHeight/1.5);
@@ -948,6 +950,10 @@ function swapCrossReset(options){
 } 
 
 function Calculate(){ // Use the tile positions on the ui to calculate 
+  let file;
+  let content;
+  console.log(content)
+
   gateModel = []; // Reset the gate model
 
   for (i = 0; i < qubits; i++){ // Initialise each line representation in gateModel array
@@ -955,20 +961,66 @@ function Calculate(){ // Use the tile positions on the ui to calculate
   } 
   
   canvas.forEachObject(function(obj){
-    if (obj == gridGroup || obj.type == 'text' || obj.top < toolboxOffset) return;
-    let temp = obj.getCenterPoint();
-    let qPosition = Math.round((temp.y - (toolboxOffset + gridSize/2))/gridSize); // Note there's a small difference in the calculations requiring some rounding. Could lead to errors on certain resolutions?
-    let gatePosition = Math.round(((temp.x - (gridSize + gridSize/2))/gridSize));
-    let objLen = gateModel[qPosition].length;
-    let gatePosLen = gatePosition + 1;
-    if (objLen < gatePosLen){ // Make sure the array holding gates for a qubit is long enough
-      for (i = objLen - 1; i < gatePosLen - 1; i++){
-        gateModel[qPosition].push(null);
+    if (obj == gridGroup || obj.top < toolboxOffset) return;
+    let temp;
+    let qPosition;
+    let gatePosition;
+    let objLen;
+    let gatePosLen;
+    let max = 0;
+    temp = obj.getCenterPoint();
+    if (obj.type == 'text'){
+      qPosition = Math.round((temp.y - (toolboxOffset + gridSize/2))/gridSize);
+      if (obj.text == '|0〉'){
+        gateModel[qPosition][0] = 0;
+      }
+      else if (obj.text == '|1〉'){
+        gateModel[qPosition][0] = 1;
+      }
+      return;
+    }
+    else{
+      qPosition = Math.round((temp.y - (toolboxOffset + gridSize/2))/gridSize); // Note there's a small difference in the calculations requiring some rounding. Could lead to errors on certain resolutions?
+      gatePosition = Math.round(((temp.x - (gridSize + gridSize/2))/gridSize));
+      objLen = gateModel[qPosition].length;
+      gatePosLen = gatePosition + 1;
+      if (objLen < gatePosLen){ // Make sure the array holding gates for a qubit is long enough
+        for (i = objLen - 1; i < gatePosLen - 1; i++){
+          gateModel[qPosition].push(null);
+        }
+        if (gatePosLen > max){ // Check max for putting into cirq
+          max = gatePosLen;
+        }
+      }
+      if (obj.gateType == 'multi_tile' && obj.child){
+        let childTemp = obj.child.getCenterPoint();
+        let childQPos = Math.round((childTemp.y - (toolboxOffset + gridSize/2))/gridSize);
+        gateModel[qPosition][gatePosition + 1] = {name: obj.name, multi: childQPos};
+      }
+      else{
+        gateModel[qPosition][gatePosition + 1] = {name: obj.name, multi: null};
       }
     }
-    gateModel[qPosition][gatePosition] = obj.name;
   })
   
   console.log(gateModel)
 
+  content = "include(\"jabalizer.jl\")\ninclude(\"execute_cirq.jl\"\ncircuit = cirq.Circuit()" 
+
 }
+
+/*
+function SaveToSVG(){ // Creates SVG representation of circuit
+  console.log("Save to SVG")
+  let file;
+  let content = canvas.toSVG(); 
+  try{
+    file = new File([content], "circuit.svg", {type: 'text/plain'});
+  }
+  catch(e){
+    file = new Blob([content], {type: 'text/plain'});
+  }
+  var objectURL = URL.createObjectURL(file);
+  document.getElementById('link').href = objectURL;
+}
+*/
