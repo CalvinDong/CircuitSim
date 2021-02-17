@@ -165,7 +165,7 @@ const circleCross = [
   }),
 ]
 
-const swap = [
+const swapSym = [
   new fabric.Line([ 0, -tileSize/6, 0, tileSize/6], {
     originX: 'center',
     originY: 'center',
@@ -201,11 +201,11 @@ const swap = [
   })
 ]
 
-const cnotCross = 
+const CNOT = 
 {
   hasControls: false,
   selectable: true,
-  name: 'cnotCross',
+  name: 'CNOT',
   child: null,
   line: null,
   hoverCursor: 'grab',
@@ -249,7 +249,7 @@ const cross = [
 const swapCross = {
   hasControls: false,
   selectable: true,
-  name: 'swapCross',
+  name: 'SWAP',
   parent: null,
   child: null,
   line: null,
@@ -270,7 +270,7 @@ const tools = [
   {name: 'X', color: '#72EFDD', gateType: 'single', symbol: null},
   {name: 'cnot', color: '#80FFDB', gateType: 'multi_tile', symbol: cnot},
   {name: 'toffoli', color: '#80FFAE', gateType: 'multi_tile', symbol: toffoli},
-  {name: 'swap', color: '#80FF9F', gateType: 'multi_tile', symbol: swap}
+  {name: 'swap', color: '#80FF9F', gateType: 'multi_tile', symbol: swapSym}
 
 ]
 
@@ -466,7 +466,7 @@ canvas.on('object:moved', function(options){
         top: (Math.round((options.target.top - toolboxOffset)/gridSize)) * gridSize + toolboxOffset + Math.round(gridSize/2 - options.target.width/2),
       });
       options.target.setCoords()
-      CalculateIntersection(options); // Bug occurs here where placing cnot gate in certain situations will register cnotCross and snotDot as intersecting
+      CalculateIntersection(options); // Bug occurs here where placing cnot gate in certain situations will register CNOT and snotDot as intersecting
     }
     else if (options.target.top < toolboxOffset) {
       console.log("removing")
@@ -496,13 +496,13 @@ canvas.on('object:moving', function(options){ // Makes multi gates behave when d
   if (options.target && options.target.name == 'cnotDot'){
     CdotReset(options)
   }
-  if (options.target && options.target.name == 'cnotCross'){
+  if (options.target && options.target.name == 'CNOT'){
     CnotReset(options);
   }
 });
 
 canvas.on('object:moved', function(options){
-  if (options.target && options.target.name == 'cnotCross'){
+  if (options.target && options.target.name == 'CNOT'){
     CnotReset(options);
   }
   if (options.target && options.target.name == 'cnotDot'){
@@ -524,7 +524,7 @@ function CalculateIntersection(options){ // Determine if tile is being moved int
     if (obj === options.target) {
       return;
     }
-    /*if (obj.type == 'path' && obj.parent.name == 'cnotCross'){
+    /*if (obj.type == 'path' && obj.parent.name == 'CNOT'){
       if (obj.parent.tof){
         if (obj.parent != options.target && (options.target.parent != obj.parent)){
           if (options.target.intersectsWithVertPath(obj)){
@@ -686,7 +686,7 @@ function RemoveTile(obj){ // Removes objects from line being removed
     if (obj.name == 'cnotDot'){
       obj = obj.parent;
     }
-    if (obj.name == 'cnotCross'){
+    if (obj.name == 'CNOT'){
       canvas.remove(obj.line);
       canvas.remove(obj.child);
       if (obj.tof){
@@ -696,7 +696,7 @@ function RemoveTile(obj){ // Removes objects from line being removed
       canvas.remove(obj);
       return;
     }
-    if (obj.name == 'swapCross'){
+    if (obj.name == 'SWAP'){
       canvas.remove(obj.line);
       canvas.remove(obj.parent);
       canvas.remove(obj);
@@ -754,7 +754,7 @@ function CnotReset(options){ // Make cnot gate behave when being dragged
   }
 }
 
-function CdotReset(options){ // make the cnotDot behave when being dragged around by cnotCross
+function CdotReset(options){ // make the cnotDot behave when being dragged around by CNOT
   options.target.set({left: options.target.parent.left + options.target.parent.width/2 - options.target.radius})
   options.target.line.path[1][1] = options.target.left + options.target.radius;
   options.target.line.path[1][2] = options.target.top;
@@ -763,7 +763,7 @@ function CdotReset(options){ // make the cnotDot behave when being dragged aroun
 function CreateCnot(options){ // Create cnot gate on line
   canvas.add(new fabric.Group(
     circleCross,
-    {...cnotCross, left: options.target.left, top: options.target.top}
+    {...CNOT, left: options.target.left, top: options.target.top}
   ))
   
   let canvasObjects = canvas.getObjects();
@@ -777,33 +777,33 @@ function CreateCnot(options){ // Create cnot gate on line
   )
 
   canvas.add(new fabric.Path('M 0 0 L 0 0', {stroke: 'grey', strokeWidth: lineStrokeWidth, objectCaching: false, parent: null, child: null}))
-  let tempCnotCross;
+  let tempCNOT;
   let tempDot;
   let tempLine;
   let tempCenter;
   canvasObjects = canvas.getObjects();
-  tempCnotCross = canvasObjects[canvasObjects.length - 3];
+  tempCNOT = canvasObjects[canvasObjects.length - 3];
   tempDot = canvasObjects[canvasObjects.length - 2];
   tempLine = canvasObjects[canvasObjects.length - 1];
-  tempCnotCross.child = tempDot;
-  tempDot.parent = tempCnotCross;
-  tempCnotCross.line = tempLine;
+  tempCNOT.child = tempDot;
+  tempDot.parent = tempCNOT;
+  tempCNOT.line = tempLine;
   tempDot.line = tempLine;
-  tempLine.parent = tempCnotCross;
+  tempLine.parent = tempCNOT;
   tempLine.child = tempDot;
-  tempCenter = tempCnotCross.getCenterPoint()
+  tempCenter = tempCNOT.getCenterPoint()
   tempLine.path[0][1] = tempCenter.x;
   tempLine.path[0][2] = tempCenter.y;
   tempLine.path[1][1] = tempCenter.x;
   tempLine.path[1][2] = tempDot.top;
   tempLine.sendToBack()
-  return tempCnotCross;
+  return tempCNOT;
 }
 
 function CreateToffoli(options){
   canvas.add(new fabric.Group(
     circleCross,
-    {...cnotCross, left: options.target.left, top: options.target.top, tempLine2: null, tof: true}
+    {...CNOT, left: options.target.left, top: options.target.top, tempLine2: null, tof: true}
   ))
   
   let canvasObjects = canvas.getObjects();
@@ -826,7 +826,7 @@ function CreateToffoli(options){
   
   canvas.add(new fabric.Path('M 0 0 L 0 0', {stroke: 'grey', strokeWidth: lineStrokeWidth, objectCaching: false, parent: null, child: null}))
   canvas.add(new fabric.Path('M 0 0 L 0 0', {stroke: 'grey', strokeWidth: lineStrokeWidth, objectCaching: false, parent: null, child: null}))
-  let tempCnotCross;
+  let tempCNOT;
   let tempDot;
   let tempDot2;
   let tempLine;
@@ -834,24 +834,24 @@ function CreateToffoli(options){
   let tempCenter;
   canvasObjects = canvas.getObjects();
   console.log(canvasObjects = canvas.getObjects())
-  tempCnotCross = canvasObjects[canvasObjects.length - 5];
+  tempCNOT = canvasObjects[canvasObjects.length - 5];
   tempDot = canvasObjects[canvasObjects.length - 4];
   tempDot2 = canvasObjects[canvasObjects.length - 3];
   tempLine = canvasObjects[canvasObjects.length - 2];
   tempLine2 = canvasObjects[canvasObjects.length - 1];
-  tempCnotCross.child = tempDot;
-  tempCnotCross.child2 = tempDot2;
-  tempDot.parent = tempCnotCross;
-  tempDot2.parent = tempCnotCross;
-  tempCnotCross.line = tempLine;
-  tempCnotCross.line2 = tempLine2;
+  tempCNOT.child = tempDot;
+  tempCNOT.child2 = tempDot2;
+  tempDot.parent = tempCNOT;
+  tempDot2.parent = tempCNOT;
+  tempCNOT.line = tempLine;
+  tempCNOT.line2 = tempLine2;
   tempDot.line = tempLine;
   tempDot2.line = tempLine2;
-  tempLine.parent = tempCnotCross;
+  tempLine.parent = tempCNOT;
   tempLine.child = tempDot;
-  tempLine2.parent = tempCnotCross;
+  tempLine2.parent = tempCNOT;
   tempLine2.child = tempDot2;
-  tempCenter = tempCnotCross.getCenterPoint()
+  tempCenter = tempCNOT.getCenterPoint()
   tempLine.path[0][1] = tempCenter.x;
   tempLine.path[0][2] = tempCenter.y;
   tempLine.path[1][1] = tempCenter.x;
@@ -862,8 +862,8 @@ function CreateToffoli(options){
   tempLine2.path[1][1] = tempCenter.x;
   tempLine2.path[1][2] = tempDot2.top;
   tempLine2.sendToBack();
-  console.log(tempCnotCross)
-  return tempCnotCross;
+  console.log(tempCNOT)
+  return tempCNOT;
 }
 
 
@@ -920,13 +920,13 @@ function CreateSwap(options){
 
 
 canvas.on('object:moving', function(options){
-  if (options.target.name == 'swapCross'){
+  if (options.target.name == 'SWAP'){
     swapCrossReset(options);
   }
 });
 
 canvas.on('object:moved', function(options){
-  if (options.target.name == 'swapCross'){
+  if (options.target.name == 'SWAP'){
     options.target.parent.set({
       left: options.target.left,
       top: options.target.parent.top
@@ -947,31 +947,7 @@ function swapCrossReset(options){
   options.target.line.path[1][2] = options.target.parent.top + options.target.parent.height/2;
 } 
 
-function Calculate(){
-  /*console.log("calculating")
-  let canvasObjects = canvas.getObjects();
-  let refArray = [toolboxOffset] // Stores the position of each line so we can match each tile
-  gateModel = []; // Reset the gate model
-
-  for (i = 0; i < qubits; i++){ // Initialise each line representation in gateModel array
-    gateModel.push([])
-  } 
-
-  for (j = 0; j < qubits; j++){
-    refArray.push(toolboxOffset + gridSize + (gridSize * j))
-  }
-  
-  canvas.forEachObject(function(obj){
-    if (obj == gridGroup) return;
-    refArray.forEach(function(parsnip, parsley){
-      if ((parsley - 1 > -1) && obj.type != 'text' && obj.top > refArray[parsley - 1] && obj.top < parsnip){
-        gateModel[parsley - 1].push(obj.name);
-      }
-    })
-  })
-  console.log(gateModel)*/
-
-  let canvasObjects = canvas.getObjects();
+function Calculate(){ // Use the tile positions on the ui to calculate 
   gateModel = []; // Reset the gate model
 
   for (i = 0; i < qubits; i++){ // Initialise each line representation in gateModel array
@@ -982,23 +958,17 @@ function Calculate(){
     if (obj == gridGroup || obj.type == 'text' || obj.top < toolboxOffset) return;
     let temp = obj.getCenterPoint();
     let qPosition = Math.round((temp.y - (toolboxOffset + gridSize/2))/gridSize); // Note there's a small difference in the calculations requiring some rounding. Could lead to errors on certain resolutions?
-    //let gatePosition = Math.round(obj.left/gridSize) - 1; Must use center(not obj.left) since left uses tile left (may cause errors)
     let gatePosition = Math.round(((temp.x - (gridSize + gridSize/2))/gridSize));
-    //console.log(((temp.x - (gridSize + gridSize/2))/gridSize));
-    //console.log((temp.y - (toolboxOffset + gridSize/2))/gridSize)
     let objLen = gateModel[qPosition].length;
     let gatePosLen = gatePosition + 1;
-    //console.log(gatePosition);
-    //gateModel[qPosition].push(obj.name);
     if (objLen < gatePosLen){ // Make sure the array holding gates for a qubit is long enough
       for (i = objLen - 1; i < gatePosLen - 1; i++){
         gateModel[qPosition].push(null);
       }
     }
     gateModel[qPosition][gatePosition] = obj.name;
-
-    console.log(gateModel)
   })
-
+  
+  console.log(gateModel)
 
 }
