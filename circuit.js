@@ -1006,6 +1006,15 @@ function Calculate(){ // Use the tile positions on the ui to calculate
   console.log(gateModel)
 
   content = "include(\"jabalizer.jl\")\ninclude(\"execute_cirq.jl\"\ncircuit = cirq.Circuit()\n" 
+
+  // Create gridQubits
+  for (i = 0; i < gateModel.length; i++){
+    content = content + `q${i} `
+    content = content + "= "
+    content = content + `cirq.gridQubit(${i}, 0)\n`
+  }
+  
+
   gateModel.forEach(function(line, lineIndex){
     content = content + "circuit.append(["
     line.forEach(function(obj, objIndex){
