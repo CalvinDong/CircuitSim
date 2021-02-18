@@ -93,7 +93,7 @@ const cnot = [
   )
 ]
 
-const toffoli = [
+const CCNOT = [
   new fabric.Circle(              
   {
     radius: tileSize/6,
@@ -271,7 +271,7 @@ const tools = [
   {name: 'U', color: '#64DFDF', gateType: 'single', symbol: null},
   {name: 'X', color: '#72EFDD', gateType: 'single', symbol: null},
   {name: 'cnot', color: '#80FFDB', gateType: 'multi_tile', symbol: cnot},
-  {name: 'toffoli', color: '#80FFAE', gateType: 'multi_tile', symbol: toffoli},
+  {name: 'CCNOT', color: '#80FFAE', gateType: 'multi_tile', symbol: CCNOT},
   {name: 'swap', color: '#80FF9F', gateType: 'multi_tile', symbol: swapSym}
 
 ]
@@ -450,7 +450,7 @@ canvas.on('object:moved', function(options){
       options.target = CreateCnot(options);
       canvas.remove(temp)
     }
-    if (options.target.name == 'toffoli'){
+    if (options.target.name == 'CCNOT'){
       temp = options.target;
       options.target = CreateToffoli(options);
       canvas.remove(temp)
@@ -1005,8 +1005,26 @@ function Calculate(){ // Use the tile positions on the ui to calculate
   
   console.log(gateModel)
 
-  content = "include(\"jabalizer.jl\")\ninclude(\"execute_cirq.jl\"\ncircuit = cirq.Circuit()" 
+  content = "include(\"jabalizer.jl\")\ninclude(\"execute_cirq.jl\"\ncircuit = cirq.Circuit()\n" 
+  gateModel.forEach(function(line, lineIndex){
+    content = content + "circuit.append(["
+    line.forEach(function(obj, objIndex){
+      if (typeof obj == 'object'){
+        console.log(obj.name)
+        if (obj.multi == null){
+          //console.log(obj.name)
+          content = content + `${obj.name}(cirq.gridQubit(${lineIndex},${objIndex}))`
+        }
+        else{
 
+        }
+      }
+      else{
+        console.log("null or the first num")
+      }
+    })
+  })
+  console.log(content)
 }
 
 /*
