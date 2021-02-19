@@ -952,6 +952,12 @@ function swapCrossReset(options){
 function Calculate(){ // Use the tile positions on the ui to calculate 
   let file;
   let content;
+  let temp;
+  let qPosition;
+  let gatePosition;
+  let objLen;
+  let gatePosLen;
+  let max = 0; // Gate Position of last qubit 
   console.log(content)
 
   gateModel = []; // Reset the gate model
@@ -962,12 +968,6 @@ function Calculate(){ // Use the tile positions on the ui to calculate
   
   canvas.forEachObject(function(obj){
     if (obj == gridGroup || obj.top < toolboxOffset) return;
-    let temp;
-    let qPosition;
-    let gatePosition;
-    let objLen;
-    let gatePosLen;
-    let max = 0;
     temp = obj.getCenterPoint();
     if (obj.type == 'text'){
       qPosition = Math.round((temp.y - (toolboxOffset + gridSize/2))/gridSize);
@@ -984,14 +984,17 @@ function Calculate(){ // Use the tile positions on the ui to calculate
       gatePosition = Math.round(((temp.x - (gridSize + gridSize/2))/gridSize));
       objLen = gateModel[qPosition].length;
       gatePosLen = gatePosition + 1;
+
       if (objLen < gatePosLen){ // Make sure the array holding gates for a qubit is long enough
         for (i = objLen - 1; i < gatePosLen - 1; i++){
           gateModel[qPosition].push(null);
         }
-        if (gatePosLen > max){ // Check max for putting into cirq
-          max = gatePosLen;
-        }
       }
+
+      if (gatePosLen > max){ // Check max for putting into cirq
+        max = gatePosLen;
+      }
+
       if (obj.gateType == 'multi_tile' && obj.child){
         let childTemp = obj.child.getCenterPoint();
         let childQPos = Math.round((childTemp.y - (toolboxOffset + gridSize/2))/gridSize);
@@ -1005,20 +1008,38 @@ function Calculate(){ // Use the tile positions on the ui to calculate
   
   console.log(gateModel)
 
-  content = "include(\"jabalizer.jl\")\ninclude(\"execute_cirq.jl\"\ncircuit = cirq.Circuit()\n" 
+  //content = "include(\"jabalizer.jl\")\ninclude(\"execute_cirq.jl\"\ncircuit = cirq.Circuit()\n" 
+  content = "import cirq\nmoments = []\ncircuit = cirq.Circuit()\n"
 
   // Create gridQubits
-  for (i = 0; i < gateModel.length; i++){
-    content = content + `q${i} `
+  gateModel.forEach(function(line, lineIndex){
+    content = content + `q${lineIndex} `
     content = content + "= "
-    content = content + `cirq.gridQubit(${i}, 0)\n`
-  }
+    content = content + `cirq.GridQubit(${lineIndex}, 0)\n`
+  })
   
+  console.log(max)
+
+  for (i = 1; i < max + 1; i++){ // Start at 1 since first position in array is dedicated to 0 or 1 state of qubit
+    content = content + "moments.append(["
+    gateModel.forEach(function(line, lineIndex){
+      console.log(line[i])
+      if (line.length < i) return;
+      if (line[i] == null) return;
+      if (line[i].name == 'cnotDot') return;
+      //if ()
+      content = content + `cirq.${line[i].name}(q${lineIndex}), `;
+    })
+    content = content + "])\n"
+  }
+
+  content = content + "for moment in moments:\n circuit.append(moment, strategy=cirq.circuits.InsertStrategy.NEW_THEN_INLINE)\n"
+  content = content + "print(circuit)"
 
   gateModel.forEach(function(line, lineIndex){
-    content = content + "circuit.append(["
+    //content = content + "circuit.append(["
     line.forEach(function(obj, objIndex){
-      if (typeof obj == 'object'){
+      /*if (typeof obj == 'object'){
         console.log(obj.name)
         if (obj.multi == null){
           //console.log(obj.name)
@@ -1030,7 +1051,7 @@ function Calculate(){ // Use the tile positions on the ui to calculate
       }
       else{
         console.log("null or the first num")
-      }
+      }*/
     })
   })
   console.log(content)
