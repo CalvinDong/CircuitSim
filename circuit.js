@@ -727,6 +727,74 @@ function SearchToolSymbol(name){
   return obj.symbol;
 }
 
+function twoQuGate(name){
+  if (name == 'cnot'){
+    canvas.add(new fabric.Group(
+      circleCross,
+      {...CNOT, left: options.target.left, top: options.target.top}
+    ))
+    
+    let canvasObjects = canvas.getObjects();
+  
+    canvas.add(new fabric.Circle(
+      {
+        ...cnotDot, 
+        left: canvasObjects[canvasObjects.length -1].left + ((canvasObjects[canvasObjects.length -1].width/2) - dotRadius ),
+        top: canvasObjects[canvasObjects.length -1].top + gridSize/1.5
+      })
+    )
+  }
+  if (name == 'swap'){
+    canvas.add(new fabric.Group(cross, {...swapCross, left: options.target.left, top: options.target.top}))
+    let canvasObjects = canvas.getObjects();
+    canvas.add(new fabric.Group(
+      [
+        new fabric.Line([0, Math.floor(tileSize/3), 0, -Math.floor(tileSize/3)], // Has to be put in full otherwise it just spawns on top of the first cross group???
+          {
+            originX: 'center',
+            originY: 'center',
+            stroke: 'GREY',
+            strokeWidth: Math.round(tileSize/12),
+            angle: 45
+          }),
+        new fabric.Line([0, Math.floor(tileSize/3), 0, -Math.floor(tileSize/3)],
+          {
+            originX: 'center',
+            originY: 'center',
+            stroke: 'BLACK',
+            strokeWidth: Math.round(tileSize/12),
+            angle: -45
+          })
+      ],
+      {...swapCross, left: 500, top: canvasObjects[canvasObjects.length -1].top + gridSize}
+    ))
+  }
+
+
+  canvas.add(new fabric.Path('M 0 0 L 0 0', {stroke: 'grey', strokeWidth: lineStrokeWidth, objectCaching: false, parent: null, child: null}))
+  let tempPARENT;
+  let tempDot;
+  let tempLine;
+  let tempCenter;
+  canvasObjects = canvas.getObjects();
+  tempPARENT = canvasObjects[canvasObjects.length - 3];
+  tempDot = canvasObjects[canvasObjects.length - 2];
+  tempLine = canvasObjects[canvasObjects.length - 1];
+  tempPARENT.child = tempDot;
+  tempDot.parent = tempPARENT;
+  tempPARENT.line = tempLine;
+  tempDot.line = tempLine;
+  tempLine.parent = tempPARENT;
+  tempLine.child = tempDot;
+  tempCenter = tempPARENT.getCenterPoint()
+  tempLine.path[0][1] = tempCenter.x;
+  tempLine.path[0][2] = tempCenter.y;
+  tempLine.path[1][1] = tempCenter.x;
+  tempLine.path[1][2] = tempDot.top;
+  tempLine.sendToBack()
+  return tempPARENT;
+}
+
 function CnotReset(options){ // Make cnot gate behave when being dragged
   options.target.child.set(
     {
@@ -880,7 +948,7 @@ function CreateSwap(options){
         {
           originX: 'center',
           originY: 'center',
-          stroke: 'GREY',
+          stroke: 'BLACK',
           strokeWidth: Math.round(tileSize/12),
           angle: 45
         }),
@@ -888,7 +956,7 @@ function CreateSwap(options){
         {
           originX: 'center',
           originY: 'center',
-          stroke: 'GREY',
+          stroke: 'BLACK',
           strokeWidth: Math.round(tileSize/12),
           angle: -45
         })
