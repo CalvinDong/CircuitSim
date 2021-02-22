@@ -1033,7 +1033,7 @@ function Calculate(){ // Use the tile positions on the ui to calculate
     content = content + "])\n"
   }
 
-  content = content + "for moment in moments:\n circuit.append(moment, strategy=cirq.circuits.InsertStrategy.NEW_THEN_INLINE)\n"
+  content = content + "for moment in moments:\n   circuit.append(moment, strategy=cirq.circuits.InsertStrategy.NEW_THEN_INLINE)\n"
   content = content + "print(circuit)"
 
   gateModel.forEach(function(line, lineIndex){
