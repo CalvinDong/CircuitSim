@@ -1,14 +1,16 @@
+// Make everything easier to edit by making text offset for those clicky text things on the left (especially for calc functions)
+
 const canvas = new fabric.Canvas('c', { selection: false });
-const width = window.innerWidth/2;
-const height = window.innerHeight/1.5;
+const width = Math.round(window.innerWidth/2);
+const height = Math.round(window.innerHeight/1.5);
 canvas.setWidth(width);
 canvas.setHeight(height);
 const maxQubits = 8;
 const minQubits = 2;
 const grid = 25;
-const gridSize = width/grid;
-const tileSize = gridSize * 0.7;
-const toolboxOffset = width/8;
+const gridSize = Math.round(width/grid);
+const tileSize = Math.round(gridSize * 0.7);
+const toolboxOffset = Math.round(width/8);
 const distMulti = gridSize;
 const lineStrokeWidth = 1;
 const dotRadius = 5;
@@ -91,7 +93,7 @@ const cnot = [
   )
 ]
 
-const toffoli = [
+const CCNOT = [
   new fabric.Circle(              
   {
     radius: tileSize/6,
@@ -165,7 +167,7 @@ const circleCross = [
   }),
 ]
 
-const swap = [
+const swapSym = [
   new fabric.Line([ 0, -tileSize/6, 0, tileSize/6], {
     originX: 'center',
     originY: 'center',
@@ -201,11 +203,11 @@ const swap = [
   })
 ]
 
-const cnotCross = 
+const CNOT = 
 {
   hasControls: false,
   selectable: true,
-  name: 'cnotCross',
+  name: 'CNOT',
   child: null,
   line: null,
   hoverCursor: 'grab',
@@ -249,7 +251,7 @@ const cross = [
 const swapCross = {
   hasControls: false,
   selectable: true,
-  name: 'swapCross',
+  name: 'SWAP',
   parent: null,
   child: null,
   line: null,
@@ -269,8 +271,8 @@ const tools = [
   {name: 'U', color: '#64DFDF', gateType: 'single', symbol: null},
   {name: 'X', color: '#72EFDD', gateType: 'single', symbol: null},
   {name: 'cnot', color: '#80FFDB', gateType: 'multi_tile', symbol: cnot},
-  {name: 'toffoli', color: '#80FFAE', gateType: 'multi_tile', symbol: toffoli},
-  {name: 'swap', color: '#80FF9F', gateType: 'multi_tile', symbol: swap}
+  {name: 'CCNOT', color: '#80FFAE', gateType: 'multi_tile', symbol: CCNOT},
+  {name: 'swap', color: '#80FF9F', gateType: 'multi_tile', symbol: swapSym}
 
 ]
 
@@ -295,6 +297,7 @@ let textField = {
 }
 
 let qArray = [{value: '|0〉', ref: null}, {value: '|0〉', ref: null}];
+let gateModel = [];
 
 DrawGrid();
 DrawQubit();
@@ -447,7 +450,7 @@ canvas.on('object:moved', function(options){
       options.target = CreateCnot(options);
       canvas.remove(temp)
     }
-    if (options.target.name == 'toffoli'){
+    if (options.target.name == 'CCNOT'){
       temp = options.target;
       options.target = CreateToffoli(options);
       canvas.remove(temp)
@@ -465,7 +468,7 @@ canvas.on('object:moved', function(options){
         top: (Math.round((options.target.top - toolboxOffset)/gridSize)) * gridSize + toolboxOffset + Math.round(gridSize/2 - options.target.width/2),
       });
       options.target.setCoords()
-      CalculateIntersection(options); // Bug occurs here where placing cnot gate in certain situations will register cnotCross and snotDot as intersecting
+      CalculateIntersection(options); // Bug occurs here where placing cnot gate in certain situations will register CNOT and snotDot as intersecting
     }
     else if (options.target.top < toolboxOffset) {
       console.log("removing")
@@ -495,13 +498,13 @@ canvas.on('object:moving', function(options){ // Makes multi gates behave when d
   if (options.target && options.target.name == 'cnotDot'){
     CdotReset(options)
   }
-  if (options.target && options.target.name == 'cnotCross'){
+  if (options.target && options.target.name == 'CNOT'){
     CnotReset(options);
   }
 });
 
 canvas.on('object:moved', function(options){
-  if (options.target && options.target.name == 'cnotCross'){
+  if (options.target && options.target.name == 'CNOT'){
     CnotReset(options);
   }
   if (options.target && options.target.name == 'cnotDot'){
@@ -523,7 +526,7 @@ function CalculateIntersection(options){ // Determine if tile is being moved int
     if (obj === options.target) {
       return;
     }
-    /*if (obj.type == 'path' && obj.parent.name == 'cnotCross'){
+    /*if (obj.type == 'path' && obj.parent.name == 'CNOT'){
       if (obj.parent.tof){
         if (obj.parent != options.target && (options.target.parent != obj.parent)){
           if (options.target.intersectsWithVertPath(obj)){
@@ -685,7 +688,7 @@ function RemoveTile(obj){ // Removes objects from line being removed
     if (obj.name == 'cnotDot'){
       obj = obj.parent;
     }
-    if (obj.name == 'cnotCross'){
+    if (obj.name == 'CNOT'){
       canvas.remove(obj.line);
       canvas.remove(obj.child);
       if (obj.tof){
@@ -695,7 +698,7 @@ function RemoveTile(obj){ // Removes objects from line being removed
       canvas.remove(obj);
       return;
     }
-    if (obj.name == 'swapCross'){
+    if (obj.name == 'SWAP'){
       canvas.remove(obj.line);
       canvas.remove(obj.parent);
       canvas.remove(obj);
@@ -753,7 +756,7 @@ function CnotReset(options){ // Make cnot gate behave when being dragged
   }
 }
 
-function CdotReset(options){ // make the cnotDot behave when being dragged around by cnotCross
+function CdotReset(options){ // make the cnotDot behave when being dragged around by CNOT
   options.target.set({left: options.target.parent.left + options.target.parent.width/2 - options.target.radius})
   options.target.line.path[1][1] = options.target.left + options.target.radius;
   options.target.line.path[1][2] = options.target.top;
@@ -762,7 +765,7 @@ function CdotReset(options){ // make the cnotDot behave when being dragged aroun
 function CreateCnot(options){ // Create cnot gate on line
   canvas.add(new fabric.Group(
     circleCross,
-    {...cnotCross, left: options.target.left, top: options.target.top}
+    {...CNOT, left: options.target.left, top: options.target.top}
   ))
   
   let canvasObjects = canvas.getObjects();
@@ -776,33 +779,33 @@ function CreateCnot(options){ // Create cnot gate on line
   )
 
   canvas.add(new fabric.Path('M 0 0 L 0 0', {stroke: 'grey', strokeWidth: lineStrokeWidth, objectCaching: false, parent: null, child: null}))
-  let tempCnotCross;
+  let tempCNOT;
   let tempDot;
   let tempLine;
   let tempCenter;
   canvasObjects = canvas.getObjects();
-  tempCnotCross = canvasObjects[canvasObjects.length - 3];
+  tempCNOT = canvasObjects[canvasObjects.length - 3];
   tempDot = canvasObjects[canvasObjects.length - 2];
   tempLine = canvasObjects[canvasObjects.length - 1];
-  tempCnotCross.child = tempDot;
-  tempDot.parent = tempCnotCross;
-  tempCnotCross.line = tempLine;
+  tempCNOT.child = tempDot;
+  tempDot.parent = tempCNOT;
+  tempCNOT.line = tempLine;
   tempDot.line = tempLine;
-  tempLine.parent = tempCnotCross;
+  tempLine.parent = tempCNOT;
   tempLine.child = tempDot;
-  tempCenter = tempCnotCross.getCenterPoint()
+  tempCenter = tempCNOT.getCenterPoint()
   tempLine.path[0][1] = tempCenter.x;
   tempLine.path[0][2] = tempCenter.y;
   tempLine.path[1][1] = tempCenter.x;
   tempLine.path[1][2] = tempDot.top;
   tempLine.sendToBack()
-  return tempCnotCross;
+  return tempCNOT;
 }
 
 function CreateToffoli(options){
   canvas.add(new fabric.Group(
     circleCross,
-    {...cnotCross, left: options.target.left, top: options.target.top, tempLine2: null, tof: true}
+    {...CNOT, left: options.target.left, top: options.target.top, tempLine2: null, tof: true}
   ))
   
   let canvasObjects = canvas.getObjects();
@@ -825,7 +828,7 @@ function CreateToffoli(options){
   
   canvas.add(new fabric.Path('M 0 0 L 0 0', {stroke: 'grey', strokeWidth: lineStrokeWidth, objectCaching: false, parent: null, child: null}))
   canvas.add(new fabric.Path('M 0 0 L 0 0', {stroke: 'grey', strokeWidth: lineStrokeWidth, objectCaching: false, parent: null, child: null}))
-  let tempCnotCross;
+  let tempCNOT;
   let tempDot;
   let tempDot2;
   let tempLine;
@@ -833,24 +836,24 @@ function CreateToffoli(options){
   let tempCenter;
   canvasObjects = canvas.getObjects();
   console.log(canvasObjects = canvas.getObjects())
-  tempCnotCross = canvasObjects[canvasObjects.length - 5];
+  tempCNOT = canvasObjects[canvasObjects.length - 5];
   tempDot = canvasObjects[canvasObjects.length - 4];
   tempDot2 = canvasObjects[canvasObjects.length - 3];
   tempLine = canvasObjects[canvasObjects.length - 2];
   tempLine2 = canvasObjects[canvasObjects.length - 1];
-  tempCnotCross.child = tempDot;
-  tempCnotCross.child2 = tempDot2;
-  tempDot.parent = tempCnotCross;
-  tempDot2.parent = tempCnotCross;
-  tempCnotCross.line = tempLine;
-  tempCnotCross.line2 = tempLine2;
+  tempCNOT.child = tempDot;
+  tempCNOT.child2 = tempDot2;
+  tempDot.parent = tempCNOT;
+  tempDot2.parent = tempCNOT;
+  tempCNOT.line = tempLine;
+  tempCNOT.line2 = tempLine2;
   tempDot.line = tempLine;
   tempDot2.line = tempLine2;
-  tempLine.parent = tempCnotCross;
+  tempLine.parent = tempCNOT;
   tempLine.child = tempDot;
-  tempLine2.parent = tempCnotCross;
+  tempLine2.parent = tempCNOT;
   tempLine2.child = tempDot2;
-  tempCenter = tempCnotCross.getCenterPoint()
+  tempCenter = tempCNOT.getCenterPoint()
   tempLine.path[0][1] = tempCenter.x;
   tempLine.path[0][2] = tempCenter.y;
   tempLine.path[1][1] = tempCenter.x;
@@ -861,8 +864,8 @@ function CreateToffoli(options){
   tempLine2.path[1][1] = tempCenter.x;
   tempLine2.path[1][2] = tempDot2.top;
   tempLine2.sendToBack();
-  console.log(tempCnotCross)
-  return tempCnotCross;
+  console.log(tempCNOT)
+  return tempCNOT;
 }
 
 
@@ -907,7 +910,7 @@ function CreateSwap(options){
   tempCross.line = tempLine;
   tempCross2.line = tempLine;
   tempLine.parent = tempCross;
-  tempLine.parent2 = tempCross2
+  tempLine.parent2 = tempCross2;
   tempCenter = tempCross.getCenterPoint()
   tempLine.path[0][1] = tempCenter.x;
   tempLine.path[0][2] = tempCenter.y;
@@ -919,13 +922,13 @@ function CreateSwap(options){
 
 
 canvas.on('object:moving', function(options){
-  if (options.target.name == 'swapCross'){
+  if (options.target.name == 'SWAP'){
     swapCrossReset(options);
   }
 });
 
 canvas.on('object:moved', function(options){
-  if (options.target.name == 'swapCross'){
+  if (options.target.name == 'SWAP'){
     options.target.parent.set({
       left: options.target.left,
       top: options.target.parent.top
@@ -945,3 +948,127 @@ function swapCrossReset(options){
   options.target.line.path[1][1] = options.target.parent.left + options.target.width/2;
   options.target.line.path[1][2] = options.target.parent.top + options.target.parent.height/2;
 } 
+
+function Calculate(){ // Use the tile positions on the ui to calculate 
+  let file;
+  let content;
+  let temp;
+  let qPosition;
+  let gatePosition;
+  let objLen;
+  let gatePosLen;
+  let max = 0; // Gate Position of last qubit 
+  console.log(content)
+
+  gateModel = []; // Reset the gate model
+
+  for (i = 0; i < qubits; i++){ // Initialise each line representation in gateModel array
+    gateModel.push([])
+  } 
+  
+  canvas.forEachObject(function(obj){
+    if (obj == gridGroup || obj.top < toolboxOffset) return;
+    temp = obj.getCenterPoint();
+    if (obj.type == 'text'){
+      qPosition = Math.round((temp.y - (toolboxOffset + gridSize/2))/gridSize);
+      if (obj.text == '|0〉'){
+        gateModel[qPosition][0] = 0;
+      }
+      else if (obj.text == '|1〉'){
+        gateModel[qPosition][0] = 1;
+      }
+      return;
+    }
+    else{
+      qPosition = Math.round((temp.y - (toolboxOffset + gridSize/2))/gridSize); // Note there's a small difference in the calculations requiring some rounding. Could lead to errors on certain resolutions?
+      gatePosition = Math.round(((temp.x - (gridSize + gridSize/2))/gridSize));
+      objLen = gateModel[qPosition].length;
+      gatePosLen = gatePosition + 1;
+
+      if (objLen < gatePosLen){ // Make sure the array holding gates for a qubit is long enough
+        for (i = objLen - 1; i < gatePosLen - 1; i++){
+          gateModel[qPosition].push(null);
+        }
+      }
+
+      if (gatePosLen > max){ // Check max for putting into cirq
+        max = gatePosLen;
+      }
+
+      if (obj.gateType == 'multi_tile' && obj.child){
+        let childTemp = obj.child.getCenterPoint();
+        let childQPos = Math.round((childTemp.y - (toolboxOffset + gridSize/2))/gridSize);
+        gateModel[qPosition][gatePosition + 1] = {name: obj.name, multi: childQPos};
+      }
+      else{
+        gateModel[qPosition][gatePosition + 1] = {name: obj.name, multi: null};
+      }
+    }
+  })
+  
+  console.log(gateModel)
+
+  //content = "include(\"jabalizer.jl\")\ninclude(\"execute_cirq.jl\"\ncircuit = cirq.Circuit()\n" 
+  content = "import cirq\nmoments = []\ncircuit = cirq.Circuit()\n"
+
+  // Create gridQubits
+  gateModel.forEach(function(line, lineIndex){
+    content = content + `q${lineIndex} `
+    content = content + "= "
+    content = content + `cirq.GridQubit(${lineIndex}, 0)\n`
+  })
+  
+  console.log(max)
+
+  for (i = 1; i < max + 1; i++){ // Start at 1 since first position in array is dedicated to 0 or 1 state of qubit
+    content = content + "moments.append(["
+    gateModel.forEach(function(line, lineIndex){
+      console.log(line[i])
+      if (line.length < i) return;
+      if (line[i] == null) return;
+      if (line[i].name == 'cnotDot') return;
+      //if ()
+      content = content + `cirq.${line[i].name}(q${lineIndex}), `;
+    })
+    content = content + "])\n"
+  }
+
+  content = content + "for moment in moments:\n   circuit.append(moment, strategy=cirq.circuits.InsertStrategy.NEW_THEN_INLINE)\n"
+  content = content + "print(circuit)"
+
+  gateModel.forEach(function(line, lineIndex){
+    //content = content + "circuit.append(["
+    line.forEach(function(obj, objIndex){
+      /*if (typeof obj == 'object'){
+        console.log(obj.name)
+        if (obj.multi == null){
+          //console.log(obj.name)
+          content = content + `${obj.name}(cirq.gridQubit(${lineIndex},${objIndex}))`
+        }
+        else{
+
+        }
+      }
+      else{
+        console.log("null or the first num")
+      }*/
+    })
+  })
+  console.log(content)
+}
+
+/*
+function SaveToSVG(){ // Creates SVG representation of circuit
+  console.log("Save to SVG")
+  let file;
+  let content = canvas.toSVG(); 
+  try{
+    file = new File([content], "circuit.svg", {type: 'text/plain'});
+  }
+  catch(e){
+    file = new Blob([content], {type: 'text/plain'});
+  }
+  var objectURL = URL.createObjectURL(file);
+  document.getElementById('link').href = objectURL;
+}
+*/
