@@ -270,7 +270,7 @@ const tools = [
   {name: 'Y', color: '#56CFE1', gateType: 'single', symbol: null},
   {name: 'U', color: '#64DFDF', gateType: 'single', symbol: null},
   {name: 'X', color: '#72EFDD', gateType: 'single', symbol: null},
-  {name: 'cnot', color: '#80FFDB', gateType: 's_multi_tile_2', symbol: cnot},
+  {name: 'cnot', color: '#80FFDB', gateType: 's_multi_tile_2', symbol: cnot}, // s_multi_tile for the tile representations of the gates
   {name: 'CCNOT', color: '#80FFAE', gateType: 's_multi_tile_3', symbol: CCNOT},
   {name: 'swap', color: '#80FF9F', gateType: 's_multi_tile_2', symbol: swapSym}
 
@@ -328,8 +328,6 @@ tools.forEach(function(element){ // Build the toolbox
   else{
     canvas.add(new fabric.Group(
       [new fabric.Rect({
-        left: 0, 
-        top: 0, 
         width: tileSize, 
         height: tileSize, 
         fill: element.color, 
@@ -414,11 +412,6 @@ canvas.on('mouse:over', function(options){ // Spawn new draggable instance of ga
         ], 
         drag_group
       ));
-      /*options.target.clone(function(clone){
-        clone.set(drag_group);
-        canvas.add(clone);
-        console.log(canvas.getObjects())
-      });*/
     }
     else{
       canvas.add(new fabric.Group(
@@ -445,7 +438,6 @@ canvas.on('mouse:down', function(options){ // Keep track of original tile positi
 canvas.on('object:moved', function(options){
   if (options.target && options.target.gateType != 'single'){ // create symbols for multi qubit gates
     let temp = options.target
-    console.log(options.target)
     /*if (options.target.name == 'CCNOT'){
       temp = options.target;
       options.target = CreateToffoli(options);
@@ -457,13 +449,8 @@ canvas.on('object:moved', function(options){
       options.target = TwoQuGate(options, options.target.name);
       canvas.remove(temp)
     }
-    /*if (options.target.name == 'swap'){
-      temp = options.target;
-      options.target = CreateSwap(options);
-      canvas.remove(temp)
-    }*/
   }
-  console.log(options.target)
+
   if (options.target.selectable && options.target.type != gridGroup) {
     if (options.target.left < width && (options.target.top > toolboxOffset) && (options.target.top < toolboxOffset + (gridSize * qubits))){
       options.target.set({ // Placing in the center of the grid tiles
@@ -495,11 +482,10 @@ canvas.on('object:moving', function(options){ // Makes multi gates behave when d
 });
 
 canvas.on('object:moved', function(options){
-  if (options.target && (options.target && options.target.parent)){
-    console.log(options)
+  if (options.target && options.target.parent){
     CdotReset(options);
   }
-  if (options.target && (options.target && options.target.child)){
+  if (options.target && options.target.child){
     CnotReset(options);
   }
 });
@@ -680,22 +666,26 @@ function RemoveTile(obj){ // Removes objects from line being removed
     if (obj.name == 'cnotDot'){
       obj = obj.parent;
     }
-    if (obj.name == 'CNOT'){
+    if (obj.gateType == 'multi_tile_2'){
       canvas.remove(obj.line);
       canvas.remove(obj.child);
-      if (obj.tof){
-        canvas.remove(obj.line2);
-        canvas.remove(obj.child2);
-      }
       canvas.remove(obj);
       return;
     }
-    if (obj.name == 'SWAP'){
+    if (obj.gateType == 'multi_tile_3'){
+      canvas.remove(obj.line);
+      canvas.remove(obj.child);
+      canvas.remove(obj.line2);
+      canvas.remove(obj.child2);
+      canvas.remove(obj);
+      return;
+    }
+    /*if (obj.name == 'SWAP'){
       canvas.remove(obj.line);
       canvas.remove(obj.parent);
       canvas.remove(obj);
       return;
-    }
+    }*/
   }
 }
 
@@ -736,6 +726,7 @@ function TwoQuGate(options, name){
       })
     )
   }
+
   if (name == 'swap'){
     canvas.add(new fabric.Group(cross, {...swapCross, left: options.target.left, top: options.target.top}))
     let canvasObjects = canvas.getObjects();
@@ -745,7 +736,7 @@ function TwoQuGate(options, name){
           {
             originX: 'center',
             originY: 'center',
-            stroke: 'GREY',
+            stroke: 'BLACK',
             strokeWidth: Math.round(tileSize/12),
             angle: 45
           }),
@@ -761,8 +752,6 @@ function TwoQuGate(options, name){
       {...swapCross, left: 500, top: canvasObjects[canvasObjects.length -1].top + gridSize}
     ))
   }
-
-
   canvas.add(new fabric.Path('M 0 0 L 0 0', {stroke: 'grey', strokeWidth: lineStrokeWidth, objectCaching: false, parent: null, child: null}))
   let tempPARENT;
   let tempCHILD;
@@ -781,9 +770,10 @@ function TwoQuGate(options, name){
   tempCenter = tempPARENT.getCenterPoint()
   tempLine.path[0][1] = tempCenter.x;
   tempLine.path[0][2] = tempCenter.y;
-  tempLine.path[1][1] = tempCenter.x;
+  tempLine.path[1][1] = tempChild.left;
   tempLine.path[1][2] = tempCHILD.top;
   tempLine.sendToBack()
+  console.log(tempLine)
   return tempPARENT;
 }
 
@@ -800,7 +790,7 @@ function CnotReset(options){ // Make cnot gate behave when being dragged
   options.target.line.path[1][1] = options.target.child.left + options.target.child.radius;
   options.target.line.path[1][2] = options.target.child.top;
   
-  if (options.target.child2){ // For toffoli gate
+  if (options.target.child2){ // For three qubit gates
     options.target.child.set('top',options.target.top + gridSize/2 + options.target.child.radius);
     options.target.child2.set(
       {
@@ -817,49 +807,11 @@ function CnotReset(options){ // Make cnot gate behave when being dragged
 }
 
 function CdotReset(options){ // make the cnotDot behave when being dragged around by CNOT
-  options.target.set({left: options.target.parent.left + options.target.parent.width/2 - options.target.radius})
-  options.target.line.path[1][1] = options.target.left + options.target.radius;
-  options.target.line.path[1][2] = options.target.top;
-}
-
-function CreateCnot(options){ // Create cnot gate on line
-  canvas.add(new fabric.Group(
-    circleCross,
-    {...CNOT, left: options.target.left, top: options.target.top}
-  ))
-  
-  let canvasObjects = canvas.getObjects();
-
-  canvas.add(new fabric.Circle(
-    {
-      ...cnotDot, 
-      left: canvasObjects[canvasObjects.length -1].left + ((canvasObjects[canvasObjects.length -1].width/2) - dotRadius ),
-      top: canvasObjects[canvasObjects.length -1].top + gridSize/1.5
-    })
-  )
-
-  canvas.add(new fabric.Path('M 0 0 L 0 0', {stroke: 'grey', strokeWidth: lineStrokeWidth, objectCaching: false, parent: null, child: null}))
-  let tempCNOT;
-  let tempDot;
-  let tempLine;
-  let tempCenter;
-  canvasObjects = canvas.getObjects();
-  tempCNOT = canvasObjects[canvasObjects.length - 3];
-  tempDot = canvasObjects[canvasObjects.length - 2];
-  tempLine = canvasObjects[canvasObjects.length - 1];
-  tempCNOT.child = tempDot;
-  tempDot.parent = tempCNOT;
-  tempCNOT.line = tempLine;
-  tempDot.line = tempLine;
-  tempLine.parent = tempCNOT;
-  tempLine.child = tempDot;
-  tempCenter = tempCNOT.getCenterPoint()
-  tempLine.path[0][1] = tempCenter.x;
-  tempLine.path[0][2] = tempCenter.y;
-  tempLine.path[1][1] = tempCenter.x;
-  tempLine.path[1][2] = tempDot.top;
-  tempLine.sendToBack()
-  return tempCNOT;
+  let center = options.target.getCenterPoint()
+  let centerParent = options.target.parent.getCenterPoint()
+  options.target.set({left: centerParent.x - options.target.width/2})
+  options.target.line.path[1][1] = options.target.left + options.target.width/2; // don't use center here because function keeps repeating as it moves
+  options.target.line.path[1][2] = center.y;
 }
 
 function CreateToffoli(options){
@@ -927,88 +879,6 @@ function CreateToffoli(options){
   console.log(tempCNOT)
   return tempCNOT;
 }
-
-/*
-function CreateSwap(options){
-  canvas.add(new fabric.Group(cross, {...swapCross, left: options.target.left, top: options.target.top}))
-
-  let canvasObjects = canvas.getObjects();
-
-  canvas.add(new fabric.Group(
-    [
-      new fabric.Line([0, Math.floor(tileSize/3), 0, -Math.floor(tileSize/3)], // Has to be put in full otherwise it just spawns on top of the first cross group???
-        {
-          originX: 'center',
-          originY: 'center',
-          stroke: 'BLACK',
-          strokeWidth: Math.round(tileSize/12),
-          angle: 45
-        }),
-      new fabric.Line([0, Math.floor(tileSize/3), 0, -Math.floor(tileSize/3)],
-        {
-          originX: 'center',
-          originY: 'center',
-          stroke: 'BLACK',
-          strokeWidth: Math.round(tileSize/12),
-          angle: -45
-        })
-    ],
-    {...swapCross, left: 500, top: canvasObjects[canvasObjects.length -1].top + gridSize}
-  ))
-
-  canvas.add(new fabric.Path('M 0 0 L 0 0', {stroke: 'grey', strokeWidth: lineStrokeWidth, objectCaching: false, parent: null, parent2: null}))
-
-  let tempCross;
-  let tempCross2;
-  let tempLine;
-  canvasObjects = canvas.getObjects();
-  tempCross = canvasObjects[canvasObjects.length - 3];
-  tempCross2 = canvasObjects[canvasObjects.length - 2];
-  tempLine = canvasObjects[canvasObjects.length - 1];
-  tempCross.parent = tempCross2;
-  tempCross2.parent = tempCross;
-  tempCross.line = tempLine;
-  tempCross2.line = tempLine;
-  tempLine.parent = tempCross;
-  tempLine.parent2 = tempCross2;
-  tempCenter = tempCross.getCenterPoint()
-  tempLine.path[0][1] = tempCenter.x;
-  tempLine.path[0][2] = tempCenter.y;
-  tempLine.path[1][1] = tempCenter.x;
-  tempLine.path[1][2] = tempCross2.top + tempCross.width/2;
-  tempLine.sendToBack();
-  return tempCross;
-}
-
-
-canvas.on('object:moving', function(options){
-  if (options.target.name == 'SWAP'){
-    swapCrossReset(options);
-  }
-});
-
-canvas.on('object:moved', function(options){
-  if (options.target.name == 'SWAP'){
-    options.target.parent.set({
-      left: options.target.left,
-      top: options.target.parent.top
-    })
-    options.target.line.path[0][1] = options.target.left + options.target.width/2;
-    options.target.line.path[0][2] = options.target.top + options.target.height/2;
-    options.target.line.path[1][1] = options.target.parent.left + options.target.width/2;
-    options.target.line.path[1][2] = options.target.parent.top + options.target.parent.height/2;
-    options.target.setCoords();
-    options.target.parent.setCoords();
-  }
-})
-
-function swapCrossReset(options){
-  options.target.line.path[0][1] = options.target.left + options.target.width/2;
-  options.target.line.path[0][2] = options.target.top + options.target.height/2;
-  options.target.line.path[1][1] = options.target.parent.left + options.target.width/2;
-  options.target.line.path[1][2] = options.target.parent.top + options.target.parent.height/2;
-} 
-*/
 
 function Calculate(){ // Use the tile positions on the ui to calculate 
   let file;
