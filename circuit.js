@@ -212,7 +212,7 @@ const CNOT =
   line: null,
   hoverCursor: 'grab',
   moveCursor: 'grabbing',
-  gateType: 'multi_tile',
+  gateType: 'multi_tile_2',
   tof: false
 }
 
@@ -257,7 +257,7 @@ const swapCross = {
   line: null,
   hoverCursor: 'grab',
   moveCursor: 'grabbing',
-  gateType: 'multi_tile',
+  gateType: 'multi_tile_2',
 }
 
 const tools = [
@@ -270,9 +270,9 @@ const tools = [
   {name: 'Y', color: '#56CFE1', gateType: 'single', symbol: null},
   {name: 'U', color: '#64DFDF', gateType: 'single', symbol: null},
   {name: 'X', color: '#72EFDD', gateType: 'single', symbol: null},
-  {name: 'cnot', color: '#80FFDB', gateType: 'multi_tile', symbol: cnot},
-  {name: 'CCNOT', color: '#80FFAE', gateType: 'multi_tile', symbol: CCNOT},
-  {name: 'swap', color: '#80FF9F', gateType: 'multi_tile', symbol: swapSym}
+  {name: 'cnot', color: '#80FFDB', gateType: 's_multi_tile_2', symbol: cnot},
+  {name: 'CCNOT', color: '#80FFAE', gateType: 's_multi_tile_3', symbol: CCNOT},
+  {name: 'swap', color: '#80FF9F', gateType: 's_multi_tile_2', symbol: swapSym}
 
 ]
 
@@ -443,24 +443,27 @@ canvas.on('mouse:down', function(options){ // Keep track of original tile positi
 })
 
 canvas.on('object:moved', function(options){
-  if (options.target && options.target.gateType == 'multi_tile'){
+  if (options.target && options.target.gateType != 'single'){ // create symbols for multi qubit gates
     let temp = options.target
-    if (options.target.name == 'cnot'){
-      temp = options.target;
-      options.target = CreateCnot(options);
-      canvas.remove(temp)
-    }
-    if (options.target.name == 'CCNOT'){
+    console.log(options.target)
+    /*if (options.target.name == 'CCNOT'){
       temp = options.target;
       options.target = CreateToffoli(options);
       canvas.remove(temp)
+    }*/
+    if (options.target.gateType == 's_multi_tile_2'){
+      temp = options.target;
+      console.log(options)
+      options.target = TwoQuGate(options, options.target.name);
+      canvas.remove(temp)
     }
-    if (options.target.name == 'swap'){
+    /*if (options.target.name == 'swap'){
       temp = options.target;
       options.target = CreateSwap(options);
       canvas.remove(temp)
-    }
+    }*/
   }
+  console.log(options.target)
   if (options.target.selectable && options.target.type != gridGroup) {
     if (options.target.left < width && (options.target.top > toolboxOffset) && (options.target.top < toolboxOffset + (gridSize * qubits))){
       options.target.set({ // Placing in the center of the grid tiles
@@ -472,18 +475,6 @@ canvas.on('object:moved', function(options){
     }
     else if (options.target.top < toolboxOffset) {
       console.log("removing")
-      /*if (options.target.gateType == 'multi_tile'){
-        canvas.remove(options.target.child);
-        canvas.remove(options.target.line);
-        canvas.remove(options.target.parent);
-        canvas.remove(options.target.line2);
-        canvas.remove(options.target.child2);
-        canvas.remove(options.target.parent.child);
-        canvas.remove(options.target.parent.child2);
-        canvas.remove(options.target.parent.line);
-        canvas.remove(options.target.parent.line2);
-      }*/
-      //canvas.remove(options.target);
       RemoveTile(options.target);
     }
     else{
@@ -495,20 +486,21 @@ canvas.on('object:moved', function(options){
 
 canvas.on('object:moving', function(options){ // Makes multi gates behave when dragged, 
   // SHOULD REALLY LOOK AT MAKING ORIGINS AROUND X TO AVOID CALCULATIONS
-  if (options.target && options.target.name == 'cnotDot'){
+  if (options.target && options.target.parent){
     CdotReset(options)
   }
-  if (options.target && options.target.name == 'CNOT'){
+  if (options.target && options.target.child){
     CnotReset(options);
   }
 });
 
 canvas.on('object:moved', function(options){
-  if (options.target && options.target.name == 'CNOT'){
-    CnotReset(options);
-  }
-  if (options.target && options.target.name == 'cnotDot'){
+  if (options.target && (options.target && options.target.parent)){
+    console.log(options)
     CdotReset(options);
+  }
+  if (options.target && (options.target && options.target.child)){
+    CnotReset(options);
   }
 });
 
@@ -727,7 +719,7 @@ function SearchToolSymbol(name){
   return obj.symbol;
 }
 
-function twoQuGate(name){
+function TwoQuGate(options, name){
   if (name == 'cnot'){
     canvas.add(new fabric.Group(
       circleCross,
@@ -773,24 +765,24 @@ function twoQuGate(name){
 
   canvas.add(new fabric.Path('M 0 0 L 0 0', {stroke: 'grey', strokeWidth: lineStrokeWidth, objectCaching: false, parent: null, child: null}))
   let tempPARENT;
-  let tempDot;
+  let tempCHILD;
   let tempLine;
   let tempCenter;
   canvasObjects = canvas.getObjects();
   tempPARENT = canvasObjects[canvasObjects.length - 3];
-  tempDot = canvasObjects[canvasObjects.length - 2];
+  tempCHILD = canvasObjects[canvasObjects.length - 2];
   tempLine = canvasObjects[canvasObjects.length - 1];
-  tempPARENT.child = tempDot;
-  tempDot.parent = tempPARENT;
+  tempPARENT.child = tempCHILD;
+  tempCHILD.parent = tempPARENT;
   tempPARENT.line = tempLine;
-  tempDot.line = tempLine;
+  tempCHILD.line = tempLine;
   tempLine.parent = tempPARENT;
-  tempLine.child = tempDot;
+  tempLine.child = tempCHILD;
   tempCenter = tempPARENT.getCenterPoint()
   tempLine.path[0][1] = tempCenter.x;
   tempLine.path[0][2] = tempCenter.y;
   tempLine.path[1][1] = tempCenter.x;
-  tempLine.path[1][2] = tempDot.top;
+  tempLine.path[1][2] = tempCHILD.top;
   tempLine.sendToBack()
   return tempPARENT;
 }
@@ -936,7 +928,7 @@ function CreateToffoli(options){
   return tempCNOT;
 }
 
-
+/*
 function CreateSwap(options){
   canvas.add(new fabric.Group(cross, {...swapCross, left: options.target.left, top: options.target.top}))
 
@@ -1016,6 +1008,7 @@ function swapCrossReset(options){
   options.target.line.path[1][1] = options.target.parent.left + options.target.width/2;
   options.target.line.path[1][2] = options.target.parent.top + options.target.parent.height/2;
 } 
+*/
 
 function Calculate(){ // Use the tile positions on the ui to calculate 
   let file;
@@ -1063,7 +1056,7 @@ function Calculate(){ // Use the tile positions on the ui to calculate
         max = gatePosLen;
       }
 
-      if (obj.gateType == 'multi_tile' && obj.child){
+      if (obj.gateType.search('multi_tile') && obj.child){
         let childTemp = obj.child.getCenterPoint();
         let childQPos = Math.round((childTemp.y - (toolboxOffset + gridSize/2))/gridSize);
         gateModel[qPosition][gatePosition + 1] = {name: obj.name, multi: childQPos};
