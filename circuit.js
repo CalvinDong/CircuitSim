@@ -749,9 +749,10 @@ function TwoQuGate(options, name){
             angle: -45
           })
       ],
-      {...swapCross, left: 500, top: canvasObjects[canvasObjects.length -1].top + gridSize}
+      {...swapCross, left: options.target.left, top: canvasObjects[canvasObjects.length -1].top + gridSize}
     ))
   }
+
   canvas.add(new fabric.Path('M 0 0 L 0 0', {stroke: 'grey', strokeWidth: lineStrokeWidth, objectCaching: false, parent: null, child: null}))
   let tempPARENT;
   let tempCHILD;
@@ -770,10 +771,11 @@ function TwoQuGate(options, name){
   tempCenter = tempPARENT.getCenterPoint()
   tempLine.path[0][1] = tempCenter.x;
   tempLine.path[0][2] = tempCenter.y;
-  tempLine.path[1][1] = tempChild.left;
+  tempLine.path[1][1] = 100;
   tempLine.path[1][2] = tempCHILD.top;
   tempLine.sendToBack()
-  console.log(tempLine)
+  console.log(tempCHILD)
+  console.log(tempPARENT)
   return tempPARENT;
 }
 
@@ -785,13 +787,15 @@ function CnotReset(options){ // Make cnot gate behave when being dragged
     }
   );
   options.target.child.setCoords();
-  options.target.line.path[0][1] = options.target.left + options.target.width/2;
-  options.target.line.path[0][2] = options.target.top + options.target.width/2;
-  options.target.line.path[1][1] = options.target.child.left + options.target.child.radius;
-  options.target.line.path[1][2] = options.target.child.top;
+  center = options.target.getCenterPoint();
+  centerChild = options.target.child.getCenterPoint();
+  options.target.line.path[0][1] = center.x;
+  options.target.line.path[0][2] = center.y;
+  options.target.line.path[1][1] = centerChild.x;
+  options.target.line.path[1][2] = centerChild.y;
   
   if (options.target.child2){ // For three qubit gates
-    options.target.child.set('top',options.target.top + gridSize/2 + options.target.child.radius);
+    options.target.child.set('top',options.target.top + gridSize/2 + options.target.child.width/2);
     options.target.child2.set(
       {
         left: options.target.left + options.target.width/2 - options.target.child2.width/2, 
@@ -801,7 +805,7 @@ function CnotReset(options){ // Make cnot gate behave when being dragged
     options.target.child2.setCoords();
     options.target.line2.path[0][1] = options.target.left + options.target.width/2;
     options.target.line2.path[0][2] = options.target.top + options.target.width/2;
-    options.target.line2.path[1][1] = options.target.child2.left + options.target.child2.radius;
+    options.target.line2.path[1][1] = options.target.child2.left + options.target.child2.width/2;
     options.target.line2.path[1][2] = options.target.child2.top;
   }
 }
