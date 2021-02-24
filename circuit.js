@@ -416,7 +416,6 @@ canvas.on('mouse:over', function(options){ // Spawn new draggable instance of ga
     }
 
     if (options.target._objects[1].type == 'text'){
-      console.log(options.target.gateType)
       canvas.add(new fabric.Group(
         [
           new fabric.Rect(drag_rect), 
@@ -656,8 +655,6 @@ function SubtractQubit(){ // Remove all grid lines then redraw them with one les
 }
 
 function removeTilesFromLine(){ // Looks for objects on the line to be removed and removes them
-  //let topLeft = new fabric.Point(0, toolboxOffset + ((gridSize) * qubits - gridSize));
-  //let bottomRight = new fabric.Point(width, toolboxOffset + ((gridSize) * qubits))
   canvas.forEachObject(function(obj){
     if (obj == gridGroup) return;
     if (obj.top > toolboxOffset + (gridSize * (qubits))){
@@ -667,9 +664,7 @@ function removeTilesFromLine(){ // Looks for objects on the line to be removed a
 }
 
 function RemoveTile(obj){ // Removes objects from line being removed
-  console.log(obj)
   if (obj.gateType == 'single'){
-    console.log("yoi")
     canvas.remove(obj)
     return;
   }
@@ -706,7 +701,6 @@ function SaveToSVG(){ // Creates SVG representation of circuit
 }
 
 function SearchToolSymbol(name){
-  console.log("going")
   let obj = tools.find(o => o.name === name)
   return obj.symbol;
 }
@@ -898,7 +892,6 @@ function Calculate(){ // Use the tile positions on the ui to calculate
   let childQPos;
   let childTemp2;
   let childQPos2;
-  console.log(content)
 
   gateModel = []; // Reset the gate model
 
@@ -955,10 +948,20 @@ function Calculate(){ // Use the tile positions on the ui to calculate
   })
   
   console.log(gateModel)
-  PyOutput(max)
+  content = PyOutput(max)
+  console.log("Save to Python")
+  try{
+    file = new File([content], "output.py", {type: 'text/plain'});
+  }
+  catch(e){
+    file = new Blob([content], {type: 'text/plain'});
+  }
+  var objectURL = URL.createObjectURL(file);
+  document.getElementById('linkPy').href = objectURL;
 }
 
 function PyOutput(max){
+  let content;
   content = "import cirq\nmoments = []\ncircuit = cirq.Circuit()\n"
 
   // Create gridQubits
@@ -979,7 +982,7 @@ function PyOutput(max){
         content = content + `cirq.${line[i].name}(q${line[i].multi}, q${lineIndex}), `;
       }
       else if (line[i].multi && line[i].multi.length == 2){
-        content = content + `cirq.${line[i].name}(q${line[i].multi[0]}, q${line[i].multi[1]}, q${lineIndex}, ), `;
+        content = content + `cirq.${line[i].name}(q${line[i].multi[0]}, q${line[i].multi[1]}, q${lineIndex}), `;
       }
       else{
         content = content + `cirq.${line[i].name}(q${lineIndex}), `;
@@ -989,9 +992,12 @@ function PyOutput(max){
   }
 
   content = content + "for moment in moments:\n   circuit.append(moment, strategy=cirq.circuits.InsertStrategy.NEW_THEN_INLINE)\n"
-  content = content + "print(circuit)"
+  content = content + "print(circuit)\n"
+  
+  content = content + "import os\nos.system('pause')"
 
   console.log(content)
+  return content;
 }
 
 /*
