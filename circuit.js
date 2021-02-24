@@ -962,13 +962,17 @@ function Calculate(){ // Use the tile positions on the ui to calculate
 
 function PyOutput(max){
   let content;
-  content = "import cirq\nmoments = []\ncircuit = cirq.Circuit()\n"
+  content = "def build_circuit():\n "
+  content = content + "from cirq import GridQubit, Circuit\n ";
+  content = content + "from cirq.circuits import InsertStrategy as strategy\n ";
+  content = content + "from cirq.ops import X, Y, Z, H, I, T, S, CNOT, CCNOT, SWAP\n ";
+  content = content + "moments = []\n circuit = Circuit()\n ";
 
   // Create gridQubits
   gateModel.forEach(function(line, lineIndex){
     content = content + `q${lineIndex} `
     content = content + "= "
-    content = content + `cirq.GridQubit(${lineIndex}, 0)\n`
+    content = content + `GridQubit(${lineIndex}, 0)\n `
   })
 
   for (i = 1; i < max + 1; i++){ // Start at 1 since first position in array is dedicated to 0 or 1 state of qubit
@@ -979,23 +983,26 @@ function PyOutput(max){
       if (line[i].gateType == 'multi_tile') return;
 
       if (line[i].multi && line[i].multi.length == 1){
-        content = content + `cirq.${line[i].name}(q${line[i].multi}, q${lineIndex}), `;
+        content = content + `${line[i].name}(q${line[i].multi}, q${lineIndex}), `;
       }
       else if (line[i].multi && line[i].multi.length == 2){
-        content = content + `cirq.${line[i].name}(q${line[i].multi[0]}, q${line[i].multi[1]}, q${lineIndex}), `;
+        content = content + `${line[i].name}(q${line[i].multi[0]}, q${line[i].multi[1]}, q${lineIndex}), `;
       }
       else{
-        content = content + `cirq.${line[i].name}(q${lineIndex}), `;
+        content = content + `${line[i].name}(q${lineIndex}), `;
       }
     })
-    content = content + "])\n"
+    content = content + "])\n "
   }
 
-  content = content + "for moment in moments:\n   circuit.append(moment, strategy=cirq.circuits.InsertStrategy.NEW_THEN_INLINE)\n"
-  content = content + "print(circuit)\n"
-  
-  content = content + "import os\nos.system('pause')"
+  content = content + "for moment in moments:\n    circuit.append(moment, strategy.NEW_THEN_INLINE)\n ";
+  content = content + "return circuit\n ";
 
+
+  content = content + "\nif __name__ == '__main__':\n ";
+  content = content + "circuit = build_circuit()\n ";
+  content = content + "print(circuit)\n ";
+  content = content + "import os\n os.system('pause')\n ";
   console.log(content)
   return content;
 }
