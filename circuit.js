@@ -93,7 +93,7 @@ const cnot = [
   )
 ]
 
-const CCNOT = [
+const ccnot = [
   new fabric.Circle(              
   {
     radius: tileSize/6,
@@ -229,6 +229,13 @@ const cnotDot = {
   gateType: 'multi_tile'
 }
 
+const CCNOT = {
+  ...CNOT,
+  gateType: 'multi_tile_3',
+  name: 'CCNOT',
+  line2: null
+}
+
 const cross = [
   new fabric.Line([0, Math.floor(tileSize/3), 0, -Math.floor(tileSize/3)],
     {
@@ -260,6 +267,11 @@ const swapCross = {
   gateType: 'multi_tile_2',
 }
 
+const swapCrossChild = {
+  ...swapCross,
+  gateType: 'multi_tile',
+}
+
 const tools = [
   {name: 'H', color: '#7400B8', gateType: 'single', symbol: null},
   {name: 'I', color: '#6930C3', gateType: 'single', symbol: null},
@@ -271,7 +283,7 @@ const tools = [
   {name: 'U', color: '#64DFDF', gateType: 'single', symbol: null},
   {name: 'X', color: '#72EFDD', gateType: 'single', symbol: null},
   {name: 'cnot', color: '#80FFDB', gateType: 's_multi_tile_2', symbol: cnot}, // s_multi_tile for the tile representations of the gates
-  {name: 'CCNOT', color: '#80FFAE', gateType: 's_multi_tile_3', symbol: CCNOT},
+  {name: 'CCNOT', color: '#80FFAE', gateType: 's_multi_tile_3', symbol: ccnot},
   {name: 'swap', color: '#80FF9F', gateType: 's_multi_tile_2', symbol: swapSym}
 
 ]
@@ -436,17 +448,16 @@ canvas.on('mouse:down', function(options){ // Keep track of original tile positi
 })
 
 canvas.on('object:moved', function(options){
-  if (options.target && options.target.gateType != 'single'){ // create symbols for multi qubit gates
+  if (options.target && options.target.gateType != 'single'){ // create symbols for multi qubit gates on the gates
     let temp = options.target
-    /*if (options.target.name == 'CCNOT'){
-      temp = options.target;
-      options.target = CreateToffoli(options);
-      canvas.remove(temp)
-    }*/
     if (options.target.gateType == 's_multi_tile_2'){
       temp = options.target;
-      console.log(options)
       options.target = TwoQuGate(options, options.target.name);
+      canvas.remove(temp)
+    }
+    if (options.target.gateType == 's_multi_tile_3'){
+      temp = options.target;
+      options.target = ThreeQuGate(options, options.target.name);
       canvas.remove(temp)
     }
   }
@@ -558,7 +569,7 @@ function DrawGrid(){ // Draw lines
   }
 
   /*
-  for (var i = 0; i <= qubits; i++){
+  for (var i = 0; i <= qubits; i++){ // For seeing the actial grid the tiles fit in
     gridGroup.addWithUpdate(new fabric.Line(
         [ 0, (toolboxOffset) + (gridSize * i), width,  toolboxOffset + (gridSize) * i], 
         { stroke: '#ccc', selectable: false }
@@ -663,9 +674,6 @@ function RemoveTile(obj){ // Removes objects from line being removed
     return;
   }
   else{
-    if (obj.name == 'cnotDot'){
-      obj = obj.parent;
-    }
     if (obj.gateType == 'multi_tile_2'){
       canvas.remove(obj.line);
       canvas.remove(obj.child);
@@ -680,12 +688,6 @@ function RemoveTile(obj){ // Removes objects from line being removed
       canvas.remove(obj);
       return;
     }
-    /*if (obj.name == 'SWAP'){
-      canvas.remove(obj.line);
-      canvas.remove(obj.parent);
-      canvas.remove(obj);
-      return;
-    }*/
   }
 }
 
@@ -749,7 +751,7 @@ function TwoQuGate(options, name){
             angle: -45
           })
       ],
-      {...swapCross, left: options.target.left, top: canvasObjects[canvasObjects.length -1].top + gridSize}
+      {...swapCrossChild, left: options.target.left, top: canvasObjects[canvasObjects.length -1].top + gridSize}
     ))
   }
 
@@ -774,10 +776,75 @@ function TwoQuGate(options, name){
   tempLine.path[1][1] = 100;
   tempLine.path[1][2] = tempCHILD.top;
   tempLine.sendToBack()
-  console.log(tempCHILD)
-  console.log(tempPARENT)
   return tempPARENT;
 }
+
+function ThreeQuGate(options, name){
+  if (name == 'CCNOT'){
+    canvas.add(new fabric.Group(
+      circleCross,
+      {...CCNOT, left: options.target.left, top: options.target.top}
+    ))
+    
+    let canvasObjects = canvas.getObjects();
+    
+    canvas.add(new fabric.Circle(
+      {
+        ...cnotDot, 
+        left: canvasObjects[canvasObjects.length -1].left + ((canvasObjects[canvasObjects.length -1].width/2) - dotRadius ),
+        top: canvasObjects[canvasObjects.length -1].top + gridSize/2 + cnotDot.radius
+      })
+    )
+    
+    canvas.add(new fabric.Circle(
+      {
+        ...cnotDot, 
+        left: canvasObjects[canvasObjects.length -1].left + ((canvasObjects[canvasObjects.length -1].width/2) - dotRadius ),
+        top: canvasObjects[canvasObjects.length -1].top + gridSize
+      })
+    )
+  }
+  
+  canvas.add(new fabric.Path('M 0 0 L 0 0', {stroke: 'grey', strokeWidth: lineStrokeWidth, objectCaching: false, parent: null, child: null}))
+  canvas.add(new fabric.Path('M 0 0 L 0 0', {stroke: 'grey', strokeWidth: lineStrokeWidth, objectCaching: false, parent: null, child: null}))
+  let tempPARENT;
+  let tempCHILD;
+  let tempCHILD2;
+  let tempLine;
+  let tempLine2;
+  let tempCenter;
+  canvasObjects = canvas.getObjects();
+  tempPARENT = canvasObjects[canvasObjects.length - 5];
+  tempCHILD = canvasObjects[canvasObjects.length - 4];
+  tempCHILD2 = canvasObjects[canvasObjects.length - 3];
+  tempLine = canvasObjects[canvasObjects.length - 2];
+  tempLine2 = canvasObjects[canvasObjects.length - 1];
+  tempPARENT.child = tempCHILD;
+  tempPARENT.child2 = tempCHILD2;
+  tempCHILD.parent = tempPARENT;
+  tempCHILD2.parent = tempPARENT;
+  tempPARENT.line = tempLine;
+  tempPARENT.line2 = tempLine2;
+  tempCHILD.line = tempLine;
+  tempCHILD2.line = tempLine2;
+  tempLine.parent = tempPARENT;
+  tempLine.child = tempCHILD;
+  tempLine2.parent = tempPARENT;
+  tempLine2.child = tempCHILD2;
+  tempCenter = tempPARENT.getCenterPoint()
+  tempLine.path[0][1] = tempCenter.x;
+  tempLine.path[0][2] = tempCenter.y;
+  tempLine.path[1][1] = tempCenter.x;
+  tempLine.path[1][2] = tempCHILD.top;
+  tempLine.sendToBack();
+  tempLine2.path[0][1] = tempCenter.x;
+  tempLine2.path[0][2] = tempCenter.y;
+  tempLine2.path[1][1] = tempCenter.x;
+  tempLine2.path[1][2] = tempCHILD2.top;
+  tempLine2.sendToBack();
+  return tempPARENT;
+}
+
 
 function CnotReset(options){ // Make cnot gate behave when being dragged
   options.target.child.set(
@@ -818,72 +885,6 @@ function CdotReset(options){ // make the cnotDot behave when being dragged aroun
   options.target.line.path[1][2] = center.y;
 }
 
-function CreateToffoli(options){
-  canvas.add(new fabric.Group(
-    circleCross,
-    {...CNOT, left: options.target.left, top: options.target.top, tempLine2: null, tof: true}
-  ))
-  
-  let canvasObjects = canvas.getObjects();
-  
-  canvas.add(new fabric.Circle(
-    {
-      ...cnotDot, 
-      left: canvasObjects[canvasObjects.length -1].left + ((canvasObjects[canvasObjects.length -1].width/2) - dotRadius ),
-      top: canvasObjects[canvasObjects.length -1].top + gridSize/2 + cnotDot.radius
-    })
-  )
-  
-  canvas.add(new fabric.Circle(
-    {
-      ...cnotDot, 
-      left: canvasObjects[canvasObjects.length -1].left + ((canvasObjects[canvasObjects.length -1].width/2) - dotRadius ),
-      top: canvasObjects[canvasObjects.length -1].top + gridSize
-    })
-  )
-  
-  canvas.add(new fabric.Path('M 0 0 L 0 0', {stroke: 'grey', strokeWidth: lineStrokeWidth, objectCaching: false, parent: null, child: null}))
-  canvas.add(new fabric.Path('M 0 0 L 0 0', {stroke: 'grey', strokeWidth: lineStrokeWidth, objectCaching: false, parent: null, child: null}))
-  let tempCNOT;
-  let tempDot;
-  let tempDot2;
-  let tempLine;
-  let tempLine2;
-  let tempCenter;
-  canvasObjects = canvas.getObjects();
-  console.log(canvasObjects = canvas.getObjects())
-  tempCNOT = canvasObjects[canvasObjects.length - 5];
-  tempDot = canvasObjects[canvasObjects.length - 4];
-  tempDot2 = canvasObjects[canvasObjects.length - 3];
-  tempLine = canvasObjects[canvasObjects.length - 2];
-  tempLine2 = canvasObjects[canvasObjects.length - 1];
-  tempCNOT.child = tempDot;
-  tempCNOT.child2 = tempDot2;
-  tempDot.parent = tempCNOT;
-  tempDot2.parent = tempCNOT;
-  tempCNOT.line = tempLine;
-  tempCNOT.line2 = tempLine2;
-  tempDot.line = tempLine;
-  tempDot2.line = tempLine2;
-  tempLine.parent = tempCNOT;
-  tempLine.child = tempDot;
-  tempLine2.parent = tempCNOT;
-  tempLine2.child = tempDot2;
-  tempCenter = tempCNOT.getCenterPoint()
-  tempLine.path[0][1] = tempCenter.x;
-  tempLine.path[0][2] = tempCenter.y;
-  tempLine.path[1][1] = tempCenter.x;
-  tempLine.path[1][2] = tempDot.top;
-  tempLine.sendToBack();
-  tempLine2.path[0][1] = tempCenter.x;
-  tempLine2.path[0][2] = tempCenter.y;
-  tempLine2.path[1][1] = tempCenter.x;
-  tempLine2.path[1][2] = tempDot2.top;
-  tempLine2.sendToBack();
-  console.log(tempCNOT)
-  return tempCNOT;
-}
-
 function Calculate(){ // Use the tile positions on the ui to calculate 
   let file;
   let content;
@@ -892,7 +893,11 @@ function Calculate(){ // Use the tile positions on the ui to calculate
   let gatePosition;
   let objLen;
   let gatePosLen;
-  let max = 0; // Gate Position of last qubit 
+  let max = 0; // Gate Position of last gate 
+  let childTemp;
+  let childQPos;
+  let childTemp2;
+  let childQPos2;
   console.log(content)
 
   gateModel = []; // Reset the gate model
@@ -929,11 +934,19 @@ function Calculate(){ // Use the tile positions on the ui to calculate
       if (gatePosLen > max){ // Check max for putting into cirq
         max = gatePosLen;
       }
-
-      if (obj.gateType.search('multi_tile') && obj.child){
-        let childTemp = obj.child.getCenterPoint();
-        let childQPos = Math.round((childTemp.y - (toolboxOffset + gridSize/2))/gridSize);
-        gateModel[qPosition][gatePosition + 1] = {name: obj.name, multi: childQPos};
+      
+      if (obj.parent) return;
+      if (obj.gateType == 'multi_tile_2'){
+        childTemp = obj.child.getCenterPoint();
+        childQPos = Math.round((childTemp.y - (toolboxOffset + gridSize/2))/gridSize);
+        gateModel[qPosition][gatePosition + 1] = {name: obj.name, multi: [childQPos]};
+      }
+      else if (obj.gateType == 'multi_tile_3'){
+        childTemp = obj.child.getCenterPoint();
+        childTemp2 = obj.child2.getCenterPoint();
+        childQPos = Math.round((childTemp.y - (toolboxOffset + gridSize/2))/gridSize);
+        childQPos2 = Math.round((childTemp2.y - (toolboxOffset + gridSize/2))/gridSize);
+        gateModel[qPosition][gatePosition + 1] = {name: obj.name, multi: [childQPos, childQPos2]};
       }
       else{
         gateModel[qPosition][gatePosition + 1] = {name: obj.name, multi: null};
@@ -942,8 +955,10 @@ function Calculate(){ // Use the tile positions on the ui to calculate
   })
   
   console.log(gateModel)
+  PyOutput(max)
+}
 
-  //content = "include(\"jabalizer.jl\")\ninclude(\"execute_cirq.jl\"\ncircuit = cirq.Circuit()\n" 
+function PyOutput(max){
   content = "import cirq\nmoments = []\ncircuit = cirq.Circuit()\n"
 
   // Create gridQubits
@@ -952,18 +967,23 @@ function Calculate(){ // Use the tile positions on the ui to calculate
     content = content + "= "
     content = content + `cirq.GridQubit(${lineIndex}, 0)\n`
   })
-  
-  console.log(max)
 
   for (i = 1; i < max + 1; i++){ // Start at 1 since first position in array is dedicated to 0 or 1 state of qubit
     content = content + "moments.append(["
     gateModel.forEach(function(line, lineIndex){
-      console.log(line[i])
       if (line.length < i) return;
       if (line[i] == null) return;
-      if (line[i].name == 'cnotDot') return;
-      //if ()
-      content = content + `cirq.${line[i].name}(q${lineIndex}), `;
+      if (line[i].gateType == 'multi_tile') return;
+
+      if (line[i].multi && line[i].multi.length == 1){
+        content = content + `cirq.${line[i].name}(q${line[i].multi}, q${lineIndex}), `;
+      }
+      else if (line[i].multi && line[i].multi.length == 2){
+        content = content + `cirq.${line[i].name}(q${line[i].multi[0]}, q${line[i].multi[1]}, q${lineIndex}, ), `;
+      }
+      else{
+        content = content + `cirq.${line[i].name}(q${lineIndex}), `;
+      }
     })
     content = content + "])\n"
   }
@@ -971,24 +991,6 @@ function Calculate(){ // Use the tile positions on the ui to calculate
   content = content + "for moment in moments:\n   circuit.append(moment, strategy=cirq.circuits.InsertStrategy.NEW_THEN_INLINE)\n"
   content = content + "print(circuit)"
 
-  gateModel.forEach(function(line, lineIndex){
-    //content = content + "circuit.append(["
-    line.forEach(function(obj, objIndex){
-      /*if (typeof obj == 'object'){
-        console.log(obj.name)
-        if (obj.multi == null){
-          //console.log(obj.name)
-          content = content + `${obj.name}(cirq.gridQubit(${lineIndex},${objIndex}))`
-        }
-        else{
-
-        }
-      }
-      else{
-        console.log("null or the first num")
-      }*/
-    })
-  })
   console.log(content)
 }
 
