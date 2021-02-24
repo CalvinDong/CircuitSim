@@ -283,7 +283,7 @@ const tools = [
   {name: 'U', color: '#64DFDF', gateType: 'single', symbol: null},
   {name: 'X', color: '#72EFDD', gateType: 'single', symbol: null},
   {name: 'cnot', color: '#80FFDB', gateType: 's_multi_tile_2', symbol: cnot}, // s_multi_tile for the tile representations of the gates
-  {name: 'CCNOT', color: '#80FFAE', gateType: 's_multi_tile_3', symbol: ccnot},
+  {name: 'ccnot', color: '#80FFAE', gateType: 's_multi_tile_3', symbol: ccnot},
   {name: 'swap', color: '#80FF9F', gateType: 's_multi_tile_2', symbol: swapSym}
 
 ]
@@ -475,7 +475,7 @@ canvas.on('object:moved', function(options){
       RemoveTile(options.target);
     }
     else{
-      //SnapToPreviousPosition(options);
+      SnapToPreviousPosition(options);
     }
     canvas.renderAll();
   }
@@ -774,7 +774,7 @@ function TwoQuGate(options, name){
 }
 
 function ThreeQuGate(options, name){
-  if (name == 'CCNOT'){
+  if (name == 'ccnot'){
     canvas.add(new fabric.Group(
       circleCross,
       {...CCNOT, left: options.target.left, top: options.target.top}
@@ -1000,18 +1000,3 @@ function PyOutput(max){
   return content;
 }
 
-/*
-function SaveToSVG(){ // Creates SVG representation of circuit
-  console.log("Save to SVG")
-  let file;
-  let content = canvas.toSVG(); 
-  try{
-    file = new File([content], "circuit.svg", {type: 'text/plain'});
-  }
-  catch(e){
-    file = new Blob([content], {type: 'text/plain'});
-  }
-  var objectURL = URL.createObjectURL(file);
-  document.getElementById('link').href = objectURL;
-}
-*/
