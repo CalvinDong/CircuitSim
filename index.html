@@ -11,7 +11,9 @@
     <canvas id="c"></canvas>
     <button onclick="AddQubit()">+</button>
     <button onclick="SubtractQubit()">-</button>
-    <button onClick="Calculate()">Calc</button>
+    <button>
+        <a id="linkPy" target="_blank" onclick="Calculate()" download="output.py">Save to Python</a>
+    </button>
     <button>
         <a id="link" target="_blank" onclick="SaveToSVG()" download="circuit.svg">Save to SVG</a>
     </button>
