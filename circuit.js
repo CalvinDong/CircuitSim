@@ -465,7 +465,7 @@ canvas.on('object:moved', function(options){
     if (options.target.left < width && (options.target.top > toolboxOffset) && (options.target.top < toolboxOffset + (gridSize * qubits))){
       options.target.set({ // Placing in the center of the grid tiles
         left: (Math.round(options.target.left/gridSize) * gridSize) + Math.round((gridSize/2 - options.target.width/2)),
-        top: (Math.round((options.target.top - toolboxOffset)/gridSize)) * gridSize + toolboxOffset + Math.round(gridSize/2 - options.target.width/2),
+        top: (Math.floor((options.target.top - toolboxOffset)/gridSize)) * gridSize + toolboxOffset + Math.round(gridSize/2 - options.target.width/2),
       });
       options.target.setCoords()
       CalculateIntersection(options); // Bug occurs here where placing cnot gate in certain situations will register CNOT and snotDot as intersecting
